@@ -2,7 +2,7 @@
 
 A powerful, customizable Markdown editor and renderer with real-time preview, built with Next.js. Fully compatible with ChatGPT-generated markdown content.
 
-![Markdown Master](https://via.placeholder.com/800x400?text=Markdown+Master)
+![Markdown Master](/public/screenshot.png)
 
 ## Features
 
