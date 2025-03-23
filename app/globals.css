@@ -1,0 +1,412 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Ubuntu:wght@400;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&family=Source+Sans+Pro:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700;1,900&family=Oswald:wght@200;300;400;500;600;700&family=Nunito&family=Roboto+Slab&family=Roboto+Mono&family=Lora&family=Fira+Sans&family=PT+Sans&family=PT+Serif&family=Arvo&family=Bitter&family=Crimson+Text&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 215 20.2% 65.1%;
+
+    --radius: 0.5rem;
+    --font-size: 16px;
+    --line-height: 1.5;
+    --font-family: "Inter", sans-serif;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #666;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+.markdown-body {
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  font-family: var(--font-family);
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6,
+.markdown-body p {
+  margin: 1em 0;
+}
+
+.markdown-body h1 {
+  @apply text-4xl font-bold;
+}
+
+.markdown-body h2 {
+  @apply text-3xl font-semibold;
+}
+
+.markdown-body h3 {
+  @apply text-2xl font-medium;
+}
+
+.markdown-body h4 {
+  @apply text-xl font-medium;
+}
+
+.markdown-body h5 {
+  @apply text-lg font-medium;
+}
+
+.markdown-body h6 {
+  @apply text-base font-medium;
+}
+
+.markdown-body p {
+  @apply my-4;
+}
+
+.markdown-body a {
+  @apply text-blue-600 hover:underline;
+}
+
+.markdown-body strong {
+  @apply font-bold;
+}
+
+.markdown-body em {
+  @apply italic;
+}
+
+.markdown-body blockquote {
+  @apply border-l-4 border-gray-300 pl-4 py-2 my-4 italic;
+}
+
+.markdown-body ul {
+  @apply list-disc pl-5 my-4;
+}
+
+.markdown-body ol {
+  @apply list-decimal pl-5 my-4;
+}
+
+.markdown-body li {
+  @apply mb-2;
+}
+
+.markdown-body table {
+  @apply w-full border-collapse my-4;
+}
+
+.markdown-body th,
+.markdown-body td {
+  @apply border border-gray-300 px-4 py-2;
+}
+
+.markdown-body th {
+  @apply bg-gray-100 font-semibold;
+}
+
+.markdown-body code {
+  @apply bg-gray-100 rounded font-mono text-sm;
+}
+
+.markdown-body pre {
+  @apply rounded my-4 overflow-x-auto;
+}
+
+.markdown-body pre code {
+  @apply bg-transparent p-0;
+}
+
+.markdown-body img {
+  @apply max-w-full h-auto my-4;
+}
+
+.markdown-body hr {
+  @apply my-8 border-t border-gray-300;
+}
+
+.katex-display {
+  display: flex;
+  justify-content: center;
+  margin: 1em 0;
+}
+
+.dark .markdown-body {
+  @apply text-gray-300;
+  color: #e0e0e0;
+}
+
+.dark .markdown-body a {
+  @apply text-blue-400;
+  color: #61dafb;
+}
+
+.dark .markdown-body blockquote {
+  @apply border-l-4 border-gray-600 bg-gray-800;
+  border-left-color: #4a4a4a;
+  background-color: #2d2d2d;
+}
+
+.dark .markdown-body th,
+.dark .markdown-body td {
+  @apply border-gray-600;
+  border-color: #4a4a4a;
+}
+
+.dark .markdown-body th {
+  @apply bg-gray-800;
+  background-color: #2d2d2d;
+}
+
+.dark .markdown-body code {
+  @apply bg-gray-800 text-gray-300;
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+}
+
+.dark .markdown-body pre {
+  background-color: #2d2d2d;
+}
+
+.dark .markdown-body hr {
+  @apply border-gray-600;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #markdown-content,
+  #markdown-content * {
+    visibility: visible !important;
+  }
+  #markdown-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+  }
+  .katex-display,
+  .katex {
+    visibility: visible !important;
+  }
+  .katex-display > .katex {
+    display: block !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-align: center !important;
+    max-width: 100% !important;
+  }
+  .katex {
+    display: inline-block !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    max-width: 100% !important;
+  }
+  
+  /* Fix for square root rendering */
+  .katex .sqrt {
+    display: inline-flex !important;
+    max-width: fit-content !important;
+  }
+  
+  .katex .sqrt .sqrt-sign {
+    position: relative !important;
+    max-width: fit-content !important;
+  }
+  
+  .katex .sqrt .vlist {
+    max-width: fit-content !important;
+  }
+  
+  .katex .overline .overline-line {
+    min-width: auto !important;
+    max-width: 100% !important;
+    width: auto !important;
+  }
+  
+  /* Ensure proper spacing and sizing */
+  .katex-html {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+}
+
+.font-roboto {
+  font-family: "Roboto", sans-serif;
+}
+
+.font-open-sans {
+  font-family: "Open Sans", sans-serif;
+}
+
+.font-lato {
+  font-family: "Lato", sans-serif;
+}
+
+.font-montserrat {
+  font-family: "Montserrat", sans-serif;
+}
+
+.font-poppins {
+  font-family: "Poppins", sans-serif;
+}
+
+.font-raleway {
+  font-family: "Raleway", sans-serif;
+}
+
+.font-ubuntu {
+  font-family: "Ubuntu", sans-serif;
+}
+
+.font-merriweather {
+  font-family: "Merriweather", serif;
+}
+
+.font-playfair-display {
+  font-family: "Playfair Display", serif;
+}
+
+.font-source-sans-pro {
+  font-family: "Source Sans Pro", sans-serif;
+}
+
+.font-oswald {
+  font-family: "Oswald", sans-serif;
+}
+
+.font-nunito {
+  font-family: "Nunito", sans-serif;
+}
+
+.font-roboto-slab {
+  font-family: "Roboto Slab", serif;
+}
+
+.font-roboto-mono {
+  font-family: "Roboto Mono", monospace;
+}
+
+.font-lora {
+  font-family: "Lora", serif;
+}
+
+.font-fira-sans {
+  font-family: "Fira Sans", sans-serif;
+}
+
+.font-pt-sans {
+  font-family: "PT Sans", sans-serif;
+}
+
+.font-pt-serif {
+  font-family: "PT Serif", serif;
+}
+
+.font-arvo {
+  font-family: "Arvo", serif;
+}
+
+.font-bitter {
+  font-family: "Bitter", serif;
+}
+
+.font-crimson-text {
+  font-family: "Crimson Text", serif;
+}
+
