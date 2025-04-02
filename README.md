@@ -124,10 +124,9 @@ Click the table button in the toolbar to open the table editor. You can:
 
 ## Known Issues
 
-1. Square root symbols may display incorrectly in print mode, showing long horizontal lines extending to the end of the page.
-2. The HTML download may not exactly match what's displayed in the markdown preview area.
+1. The HTML download may not exactly match what's displayed in the markdown preview area.
 
-We're actively working on these issues to ensure consistent rendering across all export formats.
+I'm actively working on the issues to ensure consistent rendering across all export formats.
 
 ## Customization
 
