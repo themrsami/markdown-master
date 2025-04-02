@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { DownloadIcon, CopyIcon, TrashIcon, PlusIcon } from "lucide-react"
+import { DownloadIcon, CopyIcon, TrashIcon, PlusIcon, SaveIcon, FolderIcon, FileIcon, XIcon } from "lucide-react"
 import {
   Bold,
   Italic,
@@ -37,8 +37,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog"
 import rehypeRaw from "rehype-raw"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+  SheetClose,
+} from "@/components/ui/sheet"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const initialMarkdown = `# Welcome to Markdown Master
 
@@ -103,6 +116,13 @@ $$
 That's all for now!
 `
 
+type SavedDocument = {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+};
+
 export default function Home() {
   const [markdown, setMarkdown] = useState(initialMarkdown)
   const [theme, setTheme] = useState("light")
@@ -118,6 +138,10 @@ export default function Home() {
     ["", ""],
     ["", ""],
   ])
+  const [savedDocuments, setSavedDocuments] = useState<SavedDocument[]>([])
+  const [docTitle, setDocTitle] = useState("New Document")
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
 
   useEffect(() => {
     document.body.className = theme
@@ -133,6 +157,14 @@ export default function Home() {
     setCharCount(chars)
   }, [markdown])
 
+  // Load saved documents from localStorage on component mount
+  useEffect(() => {
+    const storedDocs = localStorage.getItem('markdown-master-documents')
+    if (storedDocs) {
+      setSavedDocuments(JSON.parse(storedDocs))
+    }
+  }, [])
+
   const downloadPDF = () => {
     window.print()
   }
@@ -143,6 +175,45 @@ export default function Home() {
 
   const clearMarkdown = () => {
     setMarkdown("")
+    setDocTitle("New Document")
+  }
+
+  const downloadMarkdown = () => {
+    const blob = new Blob([markdown], { type: "text/markdown" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${docTitle.toLowerCase().replace(/\s+/g, '-')}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const saveDocument = () => {
+    const id = docTitle ? docTitle.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now() : 'doc-' + Date.now()
+    const doc = {
+      id,
+      title: docTitle || 'Untitled Document',
+      content: markdown,
+      date: new Date().toISOString()
+    }
+
+    const updatedDocs = [...savedDocuments, doc]
+    setSavedDocuments(updatedDocs)
+    localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
+    setShowSaveDialog(false)
+  }
+
+  const loadDocument = (doc: SavedDocument) => {
+    setMarkdown(doc.content)
+    setDocTitle(doc.title)
+    setShowSidebar(false)
+  }
+
+  const deleteDocument = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const updatedDocs = savedDocuments.filter(doc => doc.id !== id)
+    setSavedDocuments(updatedDocs)
+    localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
   }
 
   const downloadHTML = () => {
@@ -428,7 +499,70 @@ export default function Home() {
 
   return (
     <div className={`max-w-[95%] mx-auto p-4 h-screen flex flex-col ${theme === "dark" ? "dark" : ""}`}>
-      <h1 className="text-2xl font-bold mb-4">Markdown Master</h1>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          <h1 className="text-2xl font-bold">Markdown Master</h1>
+          <Input 
+            type="text" 
+            value={docTitle}
+            onChange={(e) => setDocTitle(e.target.value)}
+            className="ml-4 w-64" 
+            placeholder="Document Title"
+          />
+        </div>
+        <div>
+          <Sheet open={showSidebar} onOpenChange={setShowSidebar}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="mr-2">
+                <FolderIcon className="h-4 w-4 mr-2" />
+                Saved Documents
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>Saved Documents</SheetTitle>
+                <SheetDescription>
+                  Your saved markdown documents
+                </SheetDescription>
+              </SheetHeader>
+              <ScrollArea className="h-[70vh] mt-4">
+                <div className="space-y-2">
+                  {savedDocuments.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No saved documents</p>
+                  ) : (
+                    savedDocuments.map((doc) => (
+                      <div
+                        key={doc.id}
+                        onClick={() => loadDocument(doc)}
+                        className="p-3 border rounded-md hover:bg-accent cursor-pointer flex justify-between items-center"
+                      >
+                        <div>
+                          <div className="font-medium flex items-center">
+                            <FileIcon className="h-4 w-4 mr-2" />
+                            {doc.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(doc.date).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={(e) => deleteDocument(doc.id, e)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <XIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-4 mb-4">
         <Select defaultValue={theme} onValueChange={(value) => setTheme(value)}>
           <SelectTrigger className="w-[180px]">
@@ -502,15 +636,52 @@ export default function Home() {
           />
         </div>
       </div>
-      <div className="flex gap-2 mb-4">
+      
+      <div className="flex flex-wrap gap-2 mb-4">
         <Button onClick={downloadPDF} variant={theme === "dark" ? "secondary" : "default"}>
           <DownloadIcon className="w-4 h-4 mr-2" />
-          Download as PDF
+          Download PDF
         </Button>
         <Button onClick={downloadHTML} variant={theme === "dark" ? "secondary" : "default"}>
           <DownloadIcon className="w-4 h-4 mr-2" />
-          Download as HTML
+          Download HTML
         </Button>
+        <Button onClick={downloadMarkdown} variant={theme === "dark" ? "secondary" : "default"}>
+          <DownloadIcon className="w-4 h-4 mr-2" />
+          Download MD
+        </Button>
+        <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <SaveIcon className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Save Document</DialogTitle>
+              <DialogDescription>
+                Save your markdown document to access it later.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="document-title">Document Title</Label>
+              <Input
+                id="document-title"
+                value={docTitle}
+                onChange={(e) => setDocTitle(e.target.value)}
+                placeholder="Enter a title for your document"
+                className="mt-2"
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button onClick={saveDocument}>Save Document</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Button onClick={copyToClipboard} variant="outline">
           <CopyIcon className="w-4 h-4 mr-2" />
           Copy to Clipboard
@@ -520,6 +691,7 @@ export default function Home() {
           Clear
         </Button>
       </div>
+
       <div className="text-sm text-gray-500 mb-2">
         Words: {wordCount} | Characters: {charCount}
       </div>
