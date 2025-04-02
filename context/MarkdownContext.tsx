@@ -10,6 +10,12 @@ export type SavedDocument = {
   date: string;
 };
 
+type VersionHistory = {
+  content: string;
+  timestamp: number;
+  aiPrompt?: string;
+};
+
 type MarkdownContextType = {
   markdown: string;
   setMarkdown: (markdown: string) => void;
@@ -39,6 +45,25 @@ type MarkdownContextType = {
   setShowSidebar: (show: boolean) => void;
   showSaveDialog: boolean;
   setShowSaveDialog: (show: boolean) => void;
+  aiEnabled: boolean;
+  setAiEnabled: (enabled: boolean) => void;
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => void;
+  selectedText: string;
+  setSelectedText: (text: string) => void;
+  showAiPrompt: boolean;
+  setShowAiPrompt: (show: boolean) => void;
+  selectionRange: { start: number; end: number } | null;
+  setSelectionRange: (range: { start: number; end: number } | null) => void;
+  versionHistory: VersionHistory[];
+  currentVersionIndex: number;
+  addToHistory: (content: string, aiPrompt?: string) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
+  clearHistory: () => void;
+  generateWithAI: (prompt: string) => Promise<string>;
   getSyntaxHighlighterStyle: () => any;
   insertMarkdown: (format: string) => void;
   downloadPDF: () => void;
@@ -144,6 +169,35 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
   const [docTitle, setDocTitle] = useState("New Document")
   const [showSidebar, setShowSidebar] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
+  
+  // Version history state
+  const [versionHistory, setVersionHistory] = useState<VersionHistory[]>([
+    { content: initialMarkdown, timestamp: Date.now() }
+  ])
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(0)
+  const [isUndoingOrRedoing, setIsUndoingOrRedoing] = useState(false)
+  
+  // Custom setMarkdown function that tracks version history
+  const handleSetMarkdown = (newContent: string) => {
+    // Only add to history if not currently undoing/redoing
+    if (!isUndoingOrRedoing) {
+      // If we're not at the end of the history, the user has gone back
+      // and is now making a new edit, so we should truncate the future versions
+      if (currentVersionIndex < versionHistory.length - 1) {
+        setVersionHistory(versionHistory.slice(0, currentVersionIndex + 1));
+      }
+    }
+    
+    // Update the content
+    setMarkdown(newContent);
+  }
+  
+  // AI Assistant state
+  const [aiEnabled, setAiEnabled] = useState(false)
+  const [geminiApiKey, setGeminiApiKey] = useState("")
+  const [selectedText, setSelectedText] = useState("")
+  const [showAiPrompt, setShowAiPrompt] = useState(false)
+  const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null)
 
   // Handle theme and styling
   useEffect(() => {
@@ -166,6 +220,12 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     const storedDocs = localStorage.getItem('markdown-master-documents')
     if (storedDocs) {
       setSavedDocuments(JSON.parse(storedDocs))
+    }
+    
+    // Load saved API key
+    const storedApiKey = localStorage.getItem('markdown-master-api-key')
+    if (storedApiKey) {
+      setGeminiApiKey(storedApiKey)
     }
   }, [])
 
@@ -305,8 +365,7 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
               }
             })
             .join('\n')}
-        }
-        
+
         /* Code Syntax Highlighting */
         code {
           font-family: 'Roboto Mono', monospace;
@@ -507,10 +566,152 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     });
   }
 
+  // Generate content with Gemini AI
+  const generateWithAI = async (prompt: string): Promise<string> => {
+    if (!geminiApiKey) {
+      console.error("Gemini API key is not set")
+      return "Error: API key not provided. Please add your Gemini API key in settings."
+    }
+
+    try {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": geminiApiKey
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are a helpful assistant for a markdown editor application. The user has selected some markdown text and wants to change it based on the following prompt: "${prompt}". 
+                  
+The user's selected markdown text is:
+"""
+${selectedText}
+"""
+
+Generate a response that directly answers their request. Your response should be well-formatted markdown that can directly replace the selected text. Do not include explanations or extra comments outside of what should replace the text.`
+                }
+              ],
+              role: "user"
+            }
+          ],
+          generation_config: {
+            temperature: 0.7,
+            top_p: 0.95,
+            top_k: 40,
+            max_output_tokens: 8192
+          },
+          safety_settings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Parse the response to extract the generated text
+      if (data.candidates && data.candidates.length > 0 && 
+          data.candidates[0].content && 
+          data.candidates[0].content.parts && 
+          data.candidates[0].content.parts.length > 0) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error("Invalid response format from API");
+      }
+    } catch (error) {
+      console.error("Error generating AI content:", error);
+      return `Error generating content: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+  };
+
+  // Version history functions
+  const addToHistory = (content: string, aiPrompt?: string) => {
+    // Don't add duplicate content
+    if (versionHistory[currentVersionIndex]?.content === content) {
+      return;
+    }
+
+    // If we're currently viewing a past version (not the latest one)
+    if (currentVersionIndex < versionHistory.length - 1) {
+      // Create a new branch from the current version point
+      const newHistory = [...versionHistory.slice(0, currentVersionIndex + 1), {
+        content,
+        timestamp: Date.now(),
+        aiPrompt
+      }];
+      
+      setVersionHistory(newHistory);
+      setCurrentVersionIndex(newHistory.length - 1);
+    } else {
+      // We're at the latest version, simple add to history
+      setVersionHistory([...versionHistory, {
+        content,
+        timestamp: Date.now(),
+        aiPrompt
+      }]);
+      setCurrentVersionIndex(versionHistory.length);
+    }
+  };
+  
+  // Computed properties for undo/redo availability
+  const canUndo = currentVersionIndex > 0;
+  const canRedo = currentVersionIndex < versionHistory.length - 1;
+  
+  // Undo function - go back one version
+  const undo = () => {
+    if (canUndo) {
+      setIsUndoingOrRedoing(true);
+      const newIndex = currentVersionIndex - 1;
+      setCurrentVersionIndex(newIndex);
+      setMarkdown(versionHistory[newIndex].content);
+      setIsUndoingOrRedoing(false);
+    }
+  };
+  
+  // Redo function - go forward one version
+  const redo = () => {
+    if (canRedo) {
+      setIsUndoingOrRedoing(true);
+      const newIndex = currentVersionIndex + 1;
+      setCurrentVersionIndex(newIndex);
+      setMarkdown(versionHistory[newIndex].content);
+      setIsUndoingOrRedoing(false);
+    }
+  };
+  
+  // Clear history except for current version
+  const clearHistory = () => {
+    const currentVersion = versionHistory[currentVersionIndex];
+    setVersionHistory([currentVersion]);
+    setCurrentVersionIndex(0);
+  };
+
   return (
     <MarkdownContext.Provider value={{
       markdown,
-      setMarkdown,
+      setMarkdown: handleSetMarkdown, // Use our custom function here
       theme,
       setTheme,
       fontSize,
@@ -537,6 +738,17 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
       setShowSidebar,
       showSaveDialog,
       setShowSaveDialog,
+      aiEnabled,
+      setAiEnabled,
+      geminiApiKey,
+      setGeminiApiKey,
+      selectedText,
+      setSelectedText,
+      showAiPrompt,
+      setShowAiPrompt,
+      selectionRange,
+      setSelectionRange,
+      generateWithAI,
       getSyntaxHighlighterStyle,
       insertMarkdown,
       downloadPDF,
@@ -555,7 +767,15 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
       generateMarkdownTable,
       copyMarkdownTable,
       insertMarkdownTable,
-      replaceLatexDelimiters
+      replaceLatexDelimiters,
+      versionHistory,
+      currentVersionIndex,
+      addToHistory,
+      canUndo,
+      canRedo,
+      undo,
+      redo,
+      clearHistory,
     }}>
       {children}
     </MarkdownContext.Provider>

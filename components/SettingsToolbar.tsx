@@ -4,14 +4,17 @@ import { useMarkdown } from "@/context/MarkdownContext"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Palette, Type, Code2, AlignJustify } from "lucide-react"
+import { Palette, Type, Code2, Zap, Save } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
+import { Button } from "@/components/ui/button"
 import { 
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip"
+import { useEffect, useState } from "react"
 
 export default function SettingsToolbar() {
   const { 
@@ -24,8 +27,37 @@ export default function SettingsToolbar() {
     fontSize,
     setFontSize,
     lineHeight,
-    setLineHeight
+    setLineHeight,
+    aiEnabled,
+    setAiEnabled,
+    geminiApiKey,
+    setGeminiApiKey
   } = useMarkdown();
+  
+  // Local state for API key input
+  const [localApiKey, setLocalApiKey] = useState(geminiApiKey);
+
+  // Update local state when geminiApiKey changes
+  useEffect(() => {
+    setLocalApiKey(geminiApiKey);
+  }, [geminiApiKey]);
+
+  // Effect to load API key from localStorage when component mounts or AI features are enabled
+  useEffect(() => {
+    if (aiEnabled) {
+      const storedApiKey = localStorage.getItem('markdown-master-api-key');
+      if (storedApiKey) {
+        setGeminiApiKey(storedApiKey);
+        setLocalApiKey(storedApiKey);
+      }
+    }
+  }, [aiEnabled, setGeminiApiKey]);
+
+  // Function to save API key to localStorage
+  const handleApiKeySave = () => {
+    localStorage.setItem('markdown-master-api-key', localApiKey);
+    setGeminiApiKey(localApiKey);
+  };
 
   return (
     <div className="mb-6">
@@ -73,7 +105,7 @@ export default function SettingsToolbar() {
                         <SelectItem value="open-sans">Open Sans</SelectItem>
                         <SelectItem value="lato">Lato</SelectItem>
                         <SelectItem value="montserrat">Montserrat</SelectItem>
-                        <SelectItem value="poppins">Poppins</SelectItem>
+<SelectItem value="poppins">Poppins</SelectItem>
                         <SelectItem value="raleway">Raleway</SelectItem>
                         <SelectItem value="ubuntu">Ubuntu</SelectItem>
                         <SelectItem value="merriweather">Merriweather</SelectItem>
@@ -147,7 +179,7 @@ export default function SettingsToolbar() {
           </div>
           
           {/* Code Settings */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pr-4 border-r">
             <Code2 className="h-4 w-4 text-muted-foreground" />
             <TooltipProvider>
               <Tooltip>
@@ -168,6 +200,74 @@ export default function SettingsToolbar() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          </div>
+          
+          {/* AI Assistant Settings */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-muted-foreground" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="ai-enabled" className="cursor-pointer">AI Assistant</Label>
+                      <Switch 
+                        id="ai-enabled" 
+                        checked={aiEnabled}
+                        onCheckedChange={setAiEnabled}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Enable AI writing assistant</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            {aiEnabled && (
+              <div className="flex items-center gap-2">
+                <Label htmlFor="api-key" className="text-xs text-muted-foreground">API Key:</Label>
+                <div className="flex gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Input
+                          id="api-key"
+                          type="password"
+                          value={localApiKey}
+                          onChange={(e) => setLocalApiKey(e.target.value)}
+                          placeholder="Enter Gemini API Key"
+                          className="w-[200px] h-9"
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Gemini API Key for AI features</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={handleApiKeySave}
+                          className="h-9"
+                          disabled={!localApiKey}
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Save API Key</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

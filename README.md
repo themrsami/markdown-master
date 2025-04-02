@@ -8,9 +8,13 @@ A powerful, customizable Markdown editor and renderer with real-time preview, bu
 
 - **Real-time Preview**: See your markdown rendered as you type
 - **ChatGPT Compatibility**: Copy markdown directly from ChatGPT and paste it for perfect rendering
+- **AI Assistant**: Enhance selected text with Gemini AI assistance
+- **Version History**: Track document changes with undo/redo functionality
 - **Mathematics Support**: Full LaTeX math support using KaTeX
 - **Code Syntax Highlighting**: Multiple themes for code blocks
 - **Export Options**: Download as PDF or HTML with preserved formatting
+- **Document Management**: Save and load documents from local storage
+- **User Feedback**: Toast notifications and confirmation dialogs for improved UX
 - **Customization Options**:
   - Light and dark themes
   - Multiple font families
@@ -63,6 +67,21 @@ A powerful, customizable Markdown editor and renderer with real-time preview, bu
 
 Type your markdown in the left panel and see the rendered output in real-time on the right panel.
 
+### Version History
+
+- Use the version history toolbar to navigate through document versions
+- Click "Save Version" to manually save the current state of your document
+- Navigate through versions using the undo/redo buttons
+- Jump to the latest version using the fast-forward button
+
+### AI Assistant
+
+1. Enable AI features in the settings toolbar
+2. Enter your Gemini API key (it will be saved securely in your browser)
+3. Select text in the editor and right-click to use "Enhance with AI Assistant"
+4. Enter a prompt describing how to transform the selected text
+5. The AI will replace the selected text with enhanced content
+
 ### Using with ChatGPT
 
 1. Generate markdown content in ChatGPT
@@ -91,10 +110,17 @@ Click the table button in the toolbar to open the table editor. You can:
 - Input cell content
 - Generate and insert the markdown table
 
+### Document Management
+
+- Save documents to local storage with custom titles
+- Access saved documents from the "My Documents" panel
+- Load and delete saved documents as needed
+
 ### Exporting
 
-- Click "Download as PDF" to print your document
-- Click "Download as HTML" to save as an HTML file
+- Click "Export As" to see available export options
+- Choose PDF, HTML, or raw Markdown format
+- Use "HTML Preview" to customize the HTML/CSS before exporting
 
 ## Known Issues
 
@@ -124,6 +150,10 @@ Select from multiple syntax highlighting themes for code blocks:
 
 Adjust the font size and line height using the input fields.
 
+### AI Assistant Settings
+
+Enable or disable the AI assistant and manage your Gemini API key in the settings toolbar.
+
 ## Built With
 
 - [Next.js](https://nextjs.org/) - React framework
@@ -132,6 +162,7 @@ Adjust the font size and line height using the input fields.
 - [React Syntax Highlighter](https://github.com/react-syntax-highlighter/react-syntax-highlighter) - Syntax highlighting
 - [Tailwind CSS](https://tailwindcss.com/) - CSS framework
 - [Radix UI](https://www.radix-ui.com/) - UI components
+- [Google Gemini AI](https://ai.google.dev/) - AI assistance (requires API key)
 
 ## Contributing
 
@@ -146,3 +177,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Remark](https://github.com/remarkjs/remark) for markdown processing
 - [Rehype](https://github.com/rehypejs/rehype) for HTML processing
 - [React Resizable Panels](https://github.com/bvaughn/react-resizable-panels) for resizable editor/preview panels
+- [Google Generative AI](https://ai.google.dev/) for AI assistance capabilities

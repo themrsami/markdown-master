@@ -3,7 +3,16 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useMarkdown } from "@/context/MarkdownContext"
-import { DownloadIcon, CopyIcon, TrashIcon, SaveIcon, Code, FileType2, Download } from "lucide-react"
+import { 
+  DownloadIcon, 
+  CopyIcon, 
+  TrashIcon, 
+  SaveIcon, 
+  Code, 
+  FileType2, 
+  Download,
+  BookmarkIcon 
+} from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -27,6 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/hooks/use-toast"
 
 export default function ActionButtons() {
   const { 
@@ -40,10 +50,80 @@ export default function ActionButtons() {
     setDocTitle,
     showSaveDialog,
     setShowSaveDialog,
-    saveDocument
+    saveDocument,
+    addToHistory,
+    markdown
   } = useMarkdown();
   
+  const { toast } = useToast();
   const [htmlPreviewOpen, setHtmlPreviewOpen] = useState(false);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  
+  // Handler for saving a new version
+  const handleSaveVersion = () => {
+    addToHistory(markdown);
+    
+    toast({
+      title: "Version saved",
+      description: "Your document version has been saved",
+    });
+  };
+  
+  // Handle copy to clipboard with toast notification
+  const handleCopy = () => {
+    copyToClipboard();
+    toast({
+      title: "Copied to clipboard",
+      description: "Markdown content has been copied to your clipboard",
+    });
+  };
+  
+  // Handle markdown download with toast notification
+  const handleDownloadMarkdown = () => {
+    downloadMarkdown();
+    toast({
+      title: "Download started",
+      description: `${docTitle}.md is being downloaded`,
+    });
+  };
+  
+  // Handle HTML download with toast notification
+  const handleDownloadHTML = () => {
+    downloadHTML();
+    toast({
+      title: "Download started",
+      description: "HTML file is being downloaded",
+    });
+  };
+  
+  // Handle PDF download with toast notification
+  const handleDownloadPDF = () => {
+    downloadPDF();
+    toast({
+      title: "PDF export initiated",
+      description: "PDF download will start after processing",
+    });
+  };
+  
+  // Handle document save with toast notification
+  const handleSaveDocument = () => {
+    saveDocument();
+    toast({
+      title: "Document saved",
+      description: `"${docTitle}" has been saved to local storage`,
+    });
+  };
+  
+  // Handle clear document with confirmation
+  const handleClearDocument = () => {
+    clearMarkdown();
+    toast({
+      title: "Document cleared",
+      description: "The document has been cleared",
+      variant: "destructive",
+    });
+    setClearDialogOpen(false);
+  };
 
   return (
     <div className="mb-6">
@@ -81,7 +161,7 @@ export default function ActionButtons() {
                       <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                       </DialogClose>
-                      <Button onClick={saveDocument}>Save Document</Button>
+                      <Button onClick={handleSaveDocument}>Save Document</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -95,7 +175,7 @@ export default function ActionButtons() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={copyToClipboard} variant="outline" size="sm" className="rounded-none">
+                <Button onClick={handleCopy} variant="outline" size="sm" className="rounded-none">
                   <CopyIcon className="w-4 h-4 mr-2" />
                   Copy
                 </Button>
@@ -109,13 +189,57 @@ export default function ActionButtons() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={clearMarkdown} variant="outline" size="sm" className="rounded-l-none text-destructive hover:text-destructive">
-                  <TrashIcon className="w-4 h-4 mr-2" />
-                  Clear
-                </Button>
+                <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="rounded-l-none text-destructive hover:text-destructive">
+                      <TrashIcon className="w-4 h-4 mr-2" />
+                      Clear
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Clear Document</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to clear the current document? This action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-4">
+                      <Button variant="outline" onClick={() => setClearDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button variant="destructive" onClick={handleClearDocument}>
+                        Clear Document
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Clear the current document</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
+        <Separator orientation="vertical" className="h-8 mx-4" />
+        
+        {/* Version Control Action */}
+        <div className="flex items-center">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={handleSaveVersion} 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex gap-2 items-center"
+                >
+                  <BookmarkIcon className="w-4 h-4" />
+                  Save Version
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                  <p>Save current version</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -149,15 +273,15 @@ export default function ActionButtons() {
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel>Export Options</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={downloadPDF} className="cursor-pointer">
+              <DropdownMenuItem onClick={handleDownloadPDF} className="cursor-pointer">
                 <Download className="w-4 h-4 mr-2" />
                 PDF Document
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={downloadHTML} className="cursor-pointer">
+              <DropdownMenuItem onClick={handleDownloadHTML} className="cursor-pointer">
                 <FileType2 className="w-4 h-4 mr-2" />
                 HTML File
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={downloadMarkdown} className="cursor-pointer">
+              <DropdownMenuItem onClick={handleDownloadMarkdown} className="cursor-pointer">
                 <DownloadIcon className="w-4 h-4 mr-2" />
                 Markdown (.md)
               </DropdownMenuItem>

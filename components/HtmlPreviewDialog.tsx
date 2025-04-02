@@ -15,6 +15,7 @@ import { DownloadIcon, Code, FileJson } from "lucide-react"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
 
 // Dynamic import of code editor to avoid SSR issues
 const CodeEditor = dynamic(() => 
@@ -30,6 +31,7 @@ interface HtmlPreviewDialogProps {
 }
 
 export default function HtmlPreviewDialog({ open, onOpenChange }: HtmlPreviewDialogProps) {
+  const { toast } = useToast();
   const { markdown, theme, fontSize, lineHeight, fontFamily } = useMarkdown()
   const [htmlContent, setHtmlContent] = useState("")
   const [cssContent, setCssContent] = useState("")
@@ -214,6 +216,7 @@ th {
     a.download = "markdown.html"
     a.click()
     URL.revokeObjectURL(url)
+    toast({ title: "HTML file downloaded", description: "Your HTML file has been downloaded successfully." })
   }
 
   const downloadPDF = () => {

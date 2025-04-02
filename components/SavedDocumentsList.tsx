@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useMarkdown } from "@/context/MarkdownContext"
 import { FileIcon, XIcon } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ export default function SavedDocumentsList() {
   const { savedDocuments, loadDocument, deleteDocument } = useMarkdown();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: string, title: string } | null>(null);
+  const { toast } = useToast();
 
   const handleDeleteClick = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -30,7 +32,22 @@ export default function SavedDocumentsList() {
     if (documentToDelete) {
       deleteDocument(documentToDelete.id, e);
       setDeleteDialogOpen(false);
+      
+      toast({
+        title: "Document Deleted",
+        description: `"${documentToDelete.title}" has been permanently removed.`,
+        variant: "destructive",
+      });
     }
+  };
+  
+  const handleLoadDocument = (doc: any) => {
+    loadDocument(doc);
+    
+    toast({
+      title: "Document Loaded",
+      description: `"${doc.title}" has been loaded successfully.`,
+    });
   };
 
   return (
@@ -41,7 +58,7 @@ export default function SavedDocumentsList() {
         savedDocuments.map((doc) => (
           <div
             key={doc.id}
-            onClick={() => loadDocument(doc)}
+            onClick={() => handleLoadDocument(doc)}
             className="p-3 border rounded-md hover:bg-accent cursor-pointer flex justify-between items-center"
           >
             <div>

@@ -8,6 +8,8 @@ import ActionButtons from "@/components/ActionButtons"
 import FormatToolbar from "@/components/FormatToolbar"
 import MarkdownEditor from "@/components/MarkdownEditor"
 import MarkdownPreview from "@/components/MarkdownPreview"
+import AIAssistant from "@/components/AIAssistant"
+import VersionHistoryToolbar from "@/components/VersionHistoryToolbar"
 
 export default function Home() {
   return (
@@ -23,11 +25,16 @@ export default function Home() {
         
         <FormatToolbar />
         
+        <VersionHistoryToolbar />
+        
         <ResizablePanelGroup direction="horizontal" className="flex-grow rounded-lg border">
           <MarkdownEditor />
           <ResizableHandle />
           <MarkdownPreview />
         </ResizablePanelGroup>
+        
+        {/* AI Assistant floating component */}
+        <AIAssistant />
       </div>
     </MarkdownProvider>
   )
