@@ -10,12 +10,6 @@ export type SavedDocument = {
   date: string;
 };
 
-type VersionHistory = {
-  content: string;
-  timestamp: number;
-  aiPrompt?: string;
-};
-
 type MarkdownContextType = {
   markdown: string;
   setMarkdown: (markdown: string) => void;
@@ -41,6 +35,10 @@ type MarkdownContextType = {
   setSavedDocuments: (docs: SavedDocument[]) => void;
   docTitle: string;
   setDocTitle: (title: string) => void;
+  currentFileId: string | null;
+  setCurrentFileId: (id: string | null) => void;
+  hasUnsavedChanges: boolean;
+  setHasUnsavedChanges: (hasChanges: boolean) => void;
   showSidebar: boolean;
   setShowSidebar: (show: boolean) => void;
   showSaveDialog: boolean;
@@ -55,14 +53,6 @@ type MarkdownContextType = {
   setShowAiPrompt: (show: boolean) => void;
   selectionRange: { start: number; end: number } | null;
   setSelectionRange: (range: { start: number; end: number } | null) => void;
-  versionHistory: VersionHistory[];
-  currentVersionIndex: number;
-  addToHistory: (content: string, aiPrompt?: string) => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  undo: () => void;
-  redo: () => void;
-  clearHistory: () => void;
   generateWithAI: (prompt: string) => Promise<string>;
   getSyntaxHighlighterStyle: () => any;
   insertMarkdown: (format: string) => void;
@@ -70,8 +60,11 @@ type MarkdownContextType = {
   downloadHTML: () => void;
   downloadMarkdown: () => void;
   saveDocument: () => void;
+  saveAsDocument: (title: string) => void;
+  quickSaveDocument: () => void;
   loadDocument: (doc: SavedDocument) => void;
   deleteDocument: (id: string, e: React.MouseEvent) => void;
+  deleteMultipleDocuments: (ids: string[]) => void;
   copyToClipboard: () => void;
   clearMarkdown: () => void;
   addTableRow: () => void;
@@ -167,30 +160,10 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
   ])
   const [savedDocuments, setSavedDocuments] = useState<SavedDocument[]>([])
   const [docTitle, setDocTitle] = useState("New Document")
+  const [currentFileId, setCurrentFileId] = useState<string | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
-  
-  // Version history state
-  const [versionHistory, setVersionHistory] = useState<VersionHistory[]>([
-    { content: initialMarkdown, timestamp: Date.now() }
-  ])
-  const [currentVersionIndex, setCurrentVersionIndex] = useState(0)
-  const [isUndoingOrRedoing, setIsUndoingOrRedoing] = useState(false)
-  
-  // Custom setMarkdown function that tracks version history
-  const handleSetMarkdown = (newContent: string) => {
-    // Only add to history if not currently undoing/redoing
-    if (!isUndoingOrRedoing) {
-      // If we're not at the end of the history, the user has gone back
-      // and is now making a new edit, so we should truncate the future versions
-      if (currentVersionIndex < versionHistory.length - 1) {
-        setVersionHistory(versionHistory.slice(0, currentVersionIndex + 1));
-      }
-    }
-    
-    // Update the content
-    setMarkdown(newContent);
-  }
   
   // AI Assistant state
   const [aiEnabled, setAiEnabled] = useState(false)
@@ -214,6 +187,18 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     setWordCount(words)
     setCharCount(chars)
   }, [markdown])
+
+  // Track unsaved changes
+  useEffect(() => {
+    if (currentFileId) {
+      const currentDoc = savedDocuments.find(doc => doc.id === currentFileId)
+      if (currentDoc && currentDoc.content !== markdown) {
+        setHasUnsavedChanges(true)
+      }
+    } else if (markdown.trim() !== initialMarkdown.trim()) {
+      setHasUnsavedChanges(true)
+    }
+  }, [markdown, currentFileId, savedDocuments])
 
   // Load saved documents from localStorage
   useEffect(() => {
@@ -273,15 +258,72 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     setShowSaveDialog(false)
   }
 
+  const saveAsDocument = (title: string) => {
+    const id = title ? title.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now() : 'doc-' + Date.now()
+    const doc = {
+      id,
+      title: title || 'Untitled Document',
+      content: markdown,
+      date: new Date().toISOString()
+    }
+
+    const updatedDocs = [...savedDocuments, doc]
+    setSavedDocuments(updatedDocs)
+    localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
+    
+    // Update current file tracking
+    setCurrentFileId(id)
+    setDocTitle(title)
+    setHasUnsavedChanges(false)
+  }
+
+  const quickSaveDocument = () => {
+    if (currentFileId) {
+      // Update existing document
+      const updatedDocs = savedDocuments.map(doc => 
+        doc.id === currentFileId 
+          ? { ...doc, content: markdown, date: new Date().toISOString() }
+          : doc
+      )
+      setSavedDocuments(updatedDocs)
+      localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
+      setHasUnsavedChanges(false)
+    } else {
+      // No current file, treat as save as
+      const id = docTitle ? docTitle.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now() : 'doc-' + Date.now()
+      const doc = {
+        id,
+        title: docTitle || 'Untitled Document',
+        content: markdown,
+        date: new Date().toISOString()
+      }
+
+      const updatedDocs = [...savedDocuments, doc]
+      setSavedDocuments(updatedDocs)
+      localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
+      
+      setCurrentFileId(id)
+      setHasUnsavedChanges(false)
+    }
+  }
+
   const loadDocument = (doc: SavedDocument) => {
     setMarkdown(doc.content)
     setDocTitle(doc.title)
+    setCurrentFileId(doc.id)
+    setHasUnsavedChanges(false)
     setShowSidebar(false)
   }
 
   const deleteDocument = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     const updatedDocs = savedDocuments.filter(doc => doc.id !== id)
+    setSavedDocuments(updatedDocs)
+    localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
+  }
+
+  const deleteMultipleDocuments = (ids: string[]) => {
+    const updatedDocs = savedDocuments.filter(doc => !ids.includes(doc.id))
     setSavedDocuments(updatedDocs)
     localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
   }
@@ -646,72 +688,10 @@ Generate a response that directly answers their request. Your response should be
     }
   };
 
-  // Version history functions
-  const addToHistory = (content: string, aiPrompt?: string) => {
-    // Don't add duplicate content
-    if (versionHistory[currentVersionIndex]?.content === content) {
-      return;
-    }
-
-    // If we're currently viewing a past version (not the latest one)
-    if (currentVersionIndex < versionHistory.length - 1) {
-      // Create a new branch from the current version point
-      const newHistory = [...versionHistory.slice(0, currentVersionIndex + 1), {
-        content,
-        timestamp: Date.now(),
-        aiPrompt
-      }];
-      
-      setVersionHistory(newHistory);
-      setCurrentVersionIndex(newHistory.length - 1);
-    } else {
-      // We're at the latest version, simple add to history
-      setVersionHistory([...versionHistory, {
-        content,
-        timestamp: Date.now(),
-        aiPrompt
-      }]);
-      setCurrentVersionIndex(versionHistory.length);
-    }
-  };
-  
-  // Computed properties for undo/redo availability
-  const canUndo = currentVersionIndex > 0;
-  const canRedo = currentVersionIndex < versionHistory.length - 1;
-  
-  // Undo function - go back one version
-  const undo = () => {
-    if (canUndo) {
-      setIsUndoingOrRedoing(true);
-      const newIndex = currentVersionIndex - 1;
-      setCurrentVersionIndex(newIndex);
-      setMarkdown(versionHistory[newIndex].content);
-      setIsUndoingOrRedoing(false);
-    }
-  };
-  
-  // Redo function - go forward one version
-  const redo = () => {
-    if (canRedo) {
-      setIsUndoingOrRedoing(true);
-      const newIndex = currentVersionIndex + 1;
-      setCurrentVersionIndex(newIndex);
-      setMarkdown(versionHistory[newIndex].content);
-      setIsUndoingOrRedoing(false);
-    }
-  };
-  
-  // Clear history except for current version
-  const clearHistory = () => {
-    const currentVersion = versionHistory[currentVersionIndex];
-    setVersionHistory([currentVersion]);
-    setCurrentVersionIndex(0);
-  };
-
   return (
     <MarkdownContext.Provider value={{
       markdown,
-      setMarkdown: handleSetMarkdown, // Use our custom function here
+      setMarkdown, // Use the regular setMarkdown function
       theme,
       setTheme,
       fontSize,
@@ -734,6 +714,10 @@ Generate a response that directly answers their request. Your response should be
       setSavedDocuments,
       docTitle,
       setDocTitle,
+      currentFileId,
+      setCurrentFileId,
+      hasUnsavedChanges,
+      setHasUnsavedChanges,
       showSidebar,
       setShowSidebar,
       showSaveDialog,
@@ -755,8 +739,11 @@ Generate a response that directly answers their request. Your response should be
       downloadHTML,
       downloadMarkdown,
       saveDocument,
+      saveAsDocument,
+      quickSaveDocument,
       loadDocument,
       deleteDocument,
+      deleteMultipleDocuments,
       copyToClipboard,
       clearMarkdown,
       addTableRow,
@@ -768,14 +755,6 @@ Generate a response that directly answers their request. Your response should be
       copyMarkdownTable,
       insertMarkdownTable,
       replaceLatexDelimiters,
-      versionHistory,
-      currentVersionIndex,
-      addToHistory,
-      canUndo,
-      canRedo,
-      undo,
-      redo,
-      clearHistory,
     }}>
       {children}
     </MarkdownContext.Provider>

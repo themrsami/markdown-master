@@ -20,9 +20,9 @@ export default function Header() {
   const { docTitle, setDocTitle, showSidebar, setShowSidebar, theme } = useMarkdown();
 
   return (
-    <div className="mb-6 relative">
+    <div className="mb-2 relative">
       {/* Top header section with logo and document title */}
-      <div className="flex items-center justify-between py-4 px-1">
+      <div className="flex items-center justify-between py-2 px-1">
         <div className="flex items-center gap-4">
           <div className="flex items-center">
             <FileTextIcon className="h-6 w-6 mr-2 text-primary" />

@@ -17,8 +17,7 @@ export default function AIAssistant() {
     selectionRange, 
     generateWithAI,
     setMarkdown,
-    markdown,
-    addToHistory
+    markdown
   } = useMarkdown()
   
   const { toast } = useToast();
@@ -83,9 +82,6 @@ export default function AIAssistant() {
         
         // Update markdown content
         setMarkdown(newText)
-        
-        // Add to version history with AI prompt information
-        addToHistory(newText, prompt)
         
         toast({
           title: "AI Content Generated",

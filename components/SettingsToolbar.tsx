@@ -60,9 +60,9 @@ export default function SettingsToolbar() {
   };
 
   return (
-    <div className="mb-6">
-      <div className="p-3 border rounded-lg bg-background/50 shadow-sm">
-        <div className="flex flex-wrap gap-4 items-center">
+    <div className="mb-2">
+      <div className="p-2 border rounded-lg bg-background/50 shadow-sm">
+        <div className="flex flex-wrap gap-3 items-center">
           {/* Theme Settings */}
           <div className="flex items-center gap-4 pr-4 border-r">
             <div className="flex items-center gap-2">
@@ -110,7 +110,7 @@ export default function SettingsToolbar() {
                         <SelectItem value="ubuntu">Ubuntu</SelectItem>
                         <SelectItem value="merriweather">Merriweather</SelectItem>
                         <SelectItem value="playfair-display">Playfair Display</SelectItem>
-                        <SelectItem value="source-sans-pro">Source Sans Pro</SelectItem>
+                        <SelectItem value="source-serif-4">Source Serif 4</SelectItem>
                         <SelectItem value="oswald">Oswald</SelectItem>
                         <SelectItem value="nunito">Nunito</SelectItem>
                         <SelectItem value="roboto-slab">Roboto Slab</SelectItem>
@@ -122,6 +122,7 @@ export default function SettingsToolbar() {
                         <SelectItem value="arvo">Arvo</SelectItem>
                         <SelectItem value="bitter">Bitter</SelectItem>
                         <SelectItem value="crimson-text">Crimson Text</SelectItem>
+                        <SelectItem value="noto-nastaliq-urdu">Noto Nastaliq Urdu</SelectItem>
                       </SelectContent>
                     </Select>
                   </TooltipTrigger>

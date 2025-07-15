@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { useMarkdown } from "@/context/MarkdownContext"
 import { 
@@ -10,8 +10,7 @@ import {
   SaveIcon, 
   Code, 
   FileType2, 
-  Download,
-  BookmarkIcon 
+  Download
 } from "lucide-react"
 import {
   Dialog,
@@ -51,23 +50,27 @@ export default function ActionButtons() {
     showSaveDialog,
     setShowSaveDialog,
     saveDocument,
-    addToHistory,
-    markdown
+    saveAsDocument,
+    quickSaveDocument,
+    savedDocuments,
+    setSavedDocuments,
+    markdown,
+    currentFileId,
+    hasUnsavedChanges
   } = useMarkdown();
   
   const { toast } = useToast();
   const [htmlPreviewOpen, setHtmlPreviewOpen] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [localDocTitle, setLocalDocTitle] = useState("");
+  const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
   
-  // Handler for saving a new version
-  const handleSaveVersion = () => {
-    addToHistory(markdown);
-    
-    toast({
-      title: "Version saved",
-      description: "Your document version has been saved",
-    });
-  };
+  // Sync local title with main docTitle when dialogs open
+  useEffect(() => {
+    if (showSaveDialog || showSaveAsDialog) {
+      setLocalDocTitle(docTitle);
+    }
+  }, [showSaveDialog, showSaveAsDialog, docTitle]);
   
   // Handle copy to clipboard with toast notification
   const handleCopy = () => {
@@ -105,12 +108,114 @@ export default function ActionButtons() {
     });
   };
   
-  // Handle document save with toast notification
+  // Handle quick save (Ctrl+S) - save to current file or show dialog if new
+  const handleQuickSave = () => {
+    if (currentFileId) {
+      // Has current file, just save directly with toast
+      quickSaveDocument();
+      toast({
+        title: "✅ Document saved",
+        description: `"${docTitle}" has been updated`,
+        variant: "default",
+      });
+    } else {
+      // No current file, open save as dialog
+      setShowSaveAsDialog(true);
+    }
+  };
+
+  // Handle save as (always opens dialog)
+  const handleSaveAs = () => {
+    setShowSaveAsDialog(true);
+  };
+
+  // Handle save as document
+  const handleSaveAsDocument = () => {
+    // Check for duplicate names
+    const isDuplicate = savedDocuments.some(doc => 
+      doc.title.toLowerCase() === localDocTitle.toLowerCase() && 
+      doc.id !== currentFileId
+    );
+    
+    if (isDuplicate) {
+      toast({
+        title: "Duplicate Name",
+        description: `A document with the name "${localDocTitle}" already exists. Please choose a different name.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!localDocTitle.trim()) {
+      toast({
+        title: "Invalid Name",
+        description: "Please enter a valid document name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    saveAsDocument(localDocTitle);
+    setShowSaveAsDialog(false);
+    toast({
+      title: "Document saved as",
+      description: `"${localDocTitle}" has been saved`,
+    });
+  };
+  const handleCancelSave = () => {
+    setLocalDocTitle(docTitle); // Reset to original title
+    setShowSaveDialog(false);
+  };
+
+  const handleCancelSaveAs = () => {
+    setLocalDocTitle(docTitle); // Reset to original title
+    setShowSaveAsDialog(false);
+  };
   const handleSaveDocument = () => {
-    saveDocument();
+    // Check for duplicate names
+    const isDuplicate = savedDocuments.some(doc => 
+      doc.title.toLowerCase() === localDocTitle.toLowerCase() && 
+      doc.id !== currentFileId
+    );
+    
+    if (isDuplicate) {
+      toast({
+        title: "Duplicate Name",
+        description: `A document with the name "${localDocTitle}" already exists. Please choose a different name.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!localDocTitle.trim()) {
+      toast({
+        title: "Invalid Name",
+        description: "Please enter a valid document name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Update the main docTitle state with the local title
+    setDocTitle(localDocTitle);
+    
+    // Use localDocTitle for the save operation
+    const id = localDocTitle ? localDocTitle.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now() : 'doc-' + Date.now()
+    const doc = {
+      id,
+      title: localDocTitle || 'Untitled Document',
+      content: markdown,
+      date: new Date().toISOString()
+    }
+
+    const updatedDocs = [...savedDocuments, doc]
+    setSavedDocuments(updatedDocs)
+    localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
+    setShowSaveDialog(false)
+    
     toast({
       title: "Document saved",
-      description: `"${docTitle}" has been saved to local storage`,
+      description: `"${localDocTitle || 'Untitled Document'}" has been saved to local storage`,
     });
   };
   
@@ -125,49 +230,56 @@ export default function ActionButtons() {
     setClearDialogOpen(false);
   };
 
+  // Listen for keyboard shortcut save event
+  useEffect(() => {
+    const handleQuickSaveEvent = () => {
+      handleQuickSave();
+    };
+
+    document.addEventListener('quickSave', handleQuickSaveEvent);
+    return () => document.removeEventListener('quickSave', handleQuickSaveEvent);
+  }, [handleQuickSave]);
+
   return (
-    <div className="mb-6">
+    <div className="mb-2">
       <div className="flex flex-wrap items-center gap-2 p-2 bg-muted/30 rounded-lg shadow-sm">
         {/* Document Actions Group */}
         <div className="flex items-center">
+          {/* Quick Save Button */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="rounded-r-none border-r-0">
-                      <SaveIcon className="w-4 h-4 mr-2" />
-                      Save
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Save Document</DialogTitle>
-                      <DialogDescription>
-                        Save your markdown document to access it later.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                      <Label htmlFor="document-title">Document Title</Label>
-                      <Input
-                        id="document-title"
-                        value={docTitle}
-                        onChange={(e) => setDocTitle(e.target.value)}
-                        placeholder="Enter a title for your document"
-                        className="mt-2"
-                      />
-                    </div>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                      </DialogClose>
-                      <Button onClick={handleSaveDocument}>Save Document</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  onClick={handleQuickSave}
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-r-none border-r-0"
+                >
+                  <SaveIcon className="w-4 h-4 mr-2" />
+                  Save{hasUnsavedChanges && "*"}
+                </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Save document to local storage</p>
+                <p>{currentFileId ? "Save to current file" : "Save document"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Save As Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={handleSaveAs}
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-l-none rounded-r-none border-r-0"
+                >
+                  Save As
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Save document with a new name</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -175,7 +287,7 @@ export default function ActionButtons() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={handleCopy} variant="outline" size="sm" className="rounded-none">
+                <Button onClick={handleCopy} variant="outline" size="sm" className="rounded-l-none rounded-r-none">
                   <CopyIcon className="w-4 h-4 mr-2" />
                   Copy
                 </Button>
@@ -216,30 +328,6 @@ export default function ActionButtons() {
               </TooltipTrigger>
               <TooltipContent>
                 <p>Clear the current document</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        
-        <Separator orientation="vertical" className="h-8 mx-4" />
-        
-        {/* Version Control Action */}
-        <div className="flex items-center">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  onClick={handleSaveVersion} 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex gap-2 items-center"
-                >
-                  <BookmarkIcon className="w-4 h-4" />
-                  Save Version
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                  <p>Save current version</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -312,6 +400,32 @@ export default function ActionButtons() {
       
       {/* HTML Preview Dialog */}
       <HtmlPreviewDialog open={htmlPreviewOpen} onOpenChange={setHtmlPreviewOpen} />
+      
+      {/* Save As Dialog */}
+      <Dialog open={showSaveAsDialog} onOpenChange={setShowSaveAsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save As</DialogTitle>
+            <DialogDescription>
+              Save your markdown document with a new name.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="save-as-title">Document Title</Label>
+            <Input
+              id="save-as-title"
+              value={localDocTitle}
+              onChange={(e) => setLocalDocTitle(e.target.value)}
+              placeholder="Enter a title for your document"
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelSaveAs}>Cancel</Button>
+            <Button onClick={handleSaveAsDocument}>Save As</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
