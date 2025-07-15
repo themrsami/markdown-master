@@ -20,6 +20,8 @@ export default function MarkdownEditor() {
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [localContent, setLocalContent] = useState(markdown);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrollingSelf = useRef<boolean>(false);
+  const lastScrollTop = useRef<number>(0);
   
   // Debounced update to main markdown state
   const debouncedSetMarkdown = useCallback((value: string) => {
@@ -43,6 +45,67 @@ export default function MarkdownEditor() {
   useEffect(() => {
     setLocalContent(markdown);
   }, [markdown]);
+  
+  // Handle synchronized scrolling with smooth animation
+  const handleScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (isScrollingSelf.current) return; // Prevent feedback loop
+    
+    const textarea = e.currentTarget;
+    const scrollTop = textarea.scrollTop;
+    const scrollHeight = textarea.scrollHeight;
+    const clientHeight = textarea.clientHeight;
+    const maxScroll = scrollHeight - clientHeight;
+    
+    if (maxScroll <= 0) return; // No scrollable content
+    
+    const scrollPercentage = scrollTop / maxScroll;
+    lastScrollTop.current = scrollTop;
+    
+    // Use requestAnimationFrame for smooth scrolling
+    requestAnimationFrame(() => {
+      const previewElement = document.getElementById('markdown-preview-content');
+      if (previewElement) {
+        const previewMaxScroll = previewElement.scrollHeight - previewElement.clientHeight;
+        if (previewMaxScroll > 0) {
+          previewElement.scrollTo({
+            top: previewMaxScroll * scrollPercentage,
+            behavior: 'instant' // Use instant to prevent jarring
+          });
+        }
+      }
+    });
+  }, []);
+  
+  // Listen for preview scroll events
+  useEffect(() => {
+    const handlePreviewScroll = (scrollPercentage: number) => {
+      if (!textareaRef.current || isScrollingSelf.current) return;
+      
+      isScrollingSelf.current = true;
+      const textarea = textareaRef.current;
+      const maxScroll = textarea.scrollHeight - textarea.clientHeight;
+      
+      if (maxScroll > 0) {
+        const targetScrollTop = maxScroll * scrollPercentage;
+        textarea.scrollTo({
+          top: targetScrollTop,
+          behavior: 'instant'
+        });
+      }
+      
+      // Reset flag after scroll completes
+      setTimeout(() => {
+        isScrollingSelf.current = false;
+      }, 50);
+    };
+    
+    // Store the function reference for cleanup
+    (window as any).editorScrollSync = handlePreviewScroll;
+    
+    return () => {
+      delete (window as any).editorScrollSync;
+    };
+  }, []);
   
   // Cleanup debounce timeout
   useEffect(() => {
@@ -87,16 +150,21 @@ export default function MarkdownEditor() {
   };
 
   return (
-    <ResizablePanel defaultSize={50}>
-      <div className="h-full p-4">
+    <ResizablePanel defaultSize={50} minSize={30}>
+      <div className="h-full w-full flex flex-col">
         <EditorContextMenu onAIAssist={handleAIAssist}>
           <Textarea
             ref={textareaRef}
             value={localContent}
             onChange={handleContentChange}
             onSelect={handleSelect}
-            className="w-full h-full p-2 border-none rounded-none resize-none focus:outline-none focus:ring-0 font-mono custom-scrollbar"
+            onScroll={handleScroll}
+            className="flex-1 w-full min-h-0 p-3 border-none rounded-none resize-none focus:outline-none focus:ring-0 focus-visible:ring-0 font-mono text-sm leading-relaxed custom-scrollbar"
             placeholder="Enter your markdown here..."
+            style={{ 
+              minHeight: 0,
+              height: '100%'
+            }}
           />
         </EditorContextMenu>
       </div>

@@ -241,8 +241,8 @@ export default function ActionButtons() {
   }, [handleQuickSave]);
 
   return (
-    <div className="mb-2">
-      <div className="flex flex-wrap items-center gap-2 p-2 bg-muted/30 rounded-lg shadow-sm">
+    <div className="mb-1">
+      <div className="flex flex-wrap items-center gap-1 sm:gap-2 p-1 sm:p-2 bg-muted/30 rounded-lg shadow-sm">
         {/* Document Actions Group */}
         <div className="flex items-center">
           {/* Quick Save Button */}

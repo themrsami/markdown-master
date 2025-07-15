@@ -49,7 +49,7 @@ export default function FormatToolbar() {
   } = useMarkdown();
 
   return (
-    <div className="mb-2 p-2 bg-muted/40 border rounded-lg shadow-sm">
+    <div className="mb-1 p-1 sm:p-2 bg-muted/40 border rounded-lg shadow-sm">
       <div className="flex flex-wrap items-center justify-center gap-1">
         {/* Text Formatting */}
         <div className="flex items-center gap-1 px-2">

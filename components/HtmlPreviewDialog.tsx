@@ -71,7 +71,7 @@ ${htmlContent}
 
   const generateHtmlContent = async () => {
     // Get the rendered HTML content
-    const content = document.getElementById("markdown-content")?.innerHTML || ""
+    const content = document.getElementById("markdown-preview-content")?.innerHTML || ""
     setHtmlContent(`<div class="markdown-body">\n  ${content}\n</div>`)
 
     // Generate CSS content

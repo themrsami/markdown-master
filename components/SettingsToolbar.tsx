@@ -60,9 +60,9 @@ export default function SettingsToolbar() {
   };
 
   return (
-    <div className="mb-2">
-      <div className="p-2 border rounded-lg bg-background/50 shadow-sm">
-        <div className="flex flex-wrap gap-3 items-center">
+    <div className="mb-1">
+      <div className="p-1 sm:p-2 border rounded-lg bg-background/50 shadow-sm">
+        <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
           {/* Theme Settings */}
           <div className="flex items-center gap-4 pr-4 border-r">
             <div className="flex items-center gap-2">

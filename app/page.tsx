@@ -13,25 +13,27 @@ import { useEffect } from "react"
 
 export default function Home() {
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen w-full flex flex-col overflow-hidden">
       <KeyboardShortcuts />
       
-      {/* Header section - fixed height */}
-      <div className="flex-shrink-0 px-4 py-2 space-y-3">
-        <Header />
-        <SettingsToolbar />
-        <ActionButtons />
-        
-        <div className="text-sm text-gray-500">
-          <WordCharCount />
+      {/* Header section - auto height */}
+      <div className="flex-shrink-0 w-full">
+        <div className="px-2 sm:px-4 py-1 space-y-2">
+          <Header />
+          <SettingsToolbar />
+          <ActionButtons />
+          
+          <div className="text-sm text-gray-500">
+            <WordCharCount />
+          </div>
+          
+          <FormatToolbar />
         </div>
-        
-        <FormatToolbar />
       </div>
       
-      {/* Main editor area - takes remaining height */}
-      <div className="flex-1 px-4 pb-4 min-h-0">
-        <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
+      {/* Main editor area - takes all remaining height */}
+      <div className="flex-1 w-full px-2 sm:px-4 pb-2 overflow-hidden">
+        <ResizablePanelGroup direction="horizontal" className="w-full h-full rounded-lg border">
           <MarkdownEditor />
           <ResizableHandle />
           <MarkdownPreview />

@@ -74,6 +74,7 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
   html {
     height: 100%;
@@ -83,6 +84,37 @@
     height: 100%;
     margin: 0;
     padding: 0;
+  }
+  
+  /* Ensure main app container takes full height */
+  #__next {
+    height: 100%;
+  }
+  
+  /* Custom scrollbar improvements */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+    scroll-behavior: auto; /* Disable smooth scrolling for sync */
+  }
+  
+  /* Smooth scrolling for synchronized components */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--border) / 0.8);
   }
 }
 
@@ -273,11 +305,11 @@
   body * {
     visibility: hidden;
   }
-  #markdown-content,
-  #markdown-content * {
+  #markdown-preview-content,
+  #markdown-preview-content * {
     visibility: visible !important;
   }
-  #markdown-content {
+  #markdown-preview-content {
     position: absolute;
     left: 0;
     top: 0;
