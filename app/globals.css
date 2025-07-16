@@ -91,6 +91,30 @@
     height: 100%;
   }
   
+  /* Ensure full height usage on all devices */
+  body {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+  
+  #__next {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* Ensure full height usage on mobile */
+  @media (max-width: 1024px) {
+    body {
+      overflow: hidden;
+    }
+    
+    #__next {
+      height: 100vh;
+      overflow: hidden;
+    }
+  }
+  
   /* Custom scrollbar improvements */
   .custom-scrollbar {
     scrollbar-width: thin;
@@ -100,8 +124,16 @@
   
   /* Smooth scrolling for synchronized components */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
+  }
+  
+  /* Mobile optimization for scrollbars */
+  @media (max-width: 768px) {
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
   }
   
   .custom-scrollbar::-webkit-scrollbar-track {

@@ -10,7 +10,7 @@ import rehypeRaw from "rehype-raw"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { useEffect, useRef, useCallback } from "react"
 
-export default function MarkdownPreview() {
+export default function MarkdownPreviewMobile() {
   const { markdown, getSyntaxHighlighterStyle } = useMarkdown();
   const previewRef = useRef<HTMLDivElement>(null);
   const isScrollingSelf = useRef<boolean>(false);
@@ -33,8 +33,8 @@ export default function MarkdownPreview() {
     
     // Use requestAnimationFrame for smooth scrolling
     requestAnimationFrame(() => {
-      if ((window as any).editorScrollSync) {
-        (window as any).editorScrollSync(scrollPercentage);
+      if ((window as any).editorScrollSyncMobile) {
+        (window as any).editorScrollSyncMobile(scrollPercentage);
       }
     });
   }, []);
@@ -63,28 +63,28 @@ export default function MarkdownPreview() {
     };
     
     // Store the function reference for cleanup
-    (window as any).previewScrollSync = handleEditorScroll;
+    (window as any).previewScrollSyncMobile = handleEditorScroll;
     
     return () => {
-      delete (window as any).previewScrollSync;
+      delete (window as any).previewScrollSyncMobile;
     };
   }, []);
   
   return (
     <ResizablePanel 
-      defaultSize={40} 
-      minSize={20}
-      className="lg:min-h-0 min-h-[35vh]"
+      defaultSize={35} 
+      minSize={25}
+      className="min-h-0"
     >
       <div className="h-full w-full flex flex-col">
         <div 
           ref={previewRef}
-          id="markdown-preview-content" 
-          className="flex-1 overflow-auto custom-scrollbar p-3 sm:p-4 lg:p-6 touch-manipulation"
+          id="markdown-preview-content-mobile" 
+          className="flex-1 h-full overflow-auto custom-scrollbar p-3 sm:p-4 touch-manipulation"
           onScroll={handleScroll}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
-          <div className="markdown-body max-w-none prose prose-sm sm:prose-base lg:prose-lg">
+          <div className="markdown-body max-w-none prose prose-sm">
             <ReactMarkdown
             remarkPlugins={[remarkMath, remarkGfm]}
             rehypePlugins={[rehypeKatex, rehypeRaw]}

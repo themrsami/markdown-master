@@ -6,7 +6,7 @@ import { ResizablePanel } from "@/components/ui/resizable"
 import { useEffect, useRef, useState, useCallback } from "react"
 import EditorContextMenu from "./EditorContextMenu"
 
-export default function MarkdownEditor() {
+export default function MarkdownEditorMobile() {
   const { 
     markdown, 
     setMarkdown, 
@@ -63,7 +63,7 @@ export default function MarkdownEditor() {
     
     // Use requestAnimationFrame for smooth scrolling
     requestAnimationFrame(() => {
-      const previewElement = document.getElementById('markdown-preview-content');
+      const previewElement = document.getElementById('markdown-preview-content-mobile');
       if (previewElement) {
         const previewMaxScroll = previewElement.scrollHeight - previewElement.clientHeight;
         if (previewMaxScroll > 0) {
@@ -100,10 +100,10 @@ export default function MarkdownEditor() {
     };
     
     // Store the function reference for cleanup
-    (window as any).editorScrollSync = handlePreviewScroll;
+    (window as any).editorScrollSyncMobile = handlePreviewScroll;
     
     return () => {
-      delete (window as any).editorScrollSync;
+      delete (window as any).editorScrollSyncMobile;
     };
   }, []);
   
@@ -151,9 +151,9 @@ export default function MarkdownEditor() {
 
   return (
     <ResizablePanel 
-      defaultSize={60} 
-      minSize={30}
-      className="lg:min-h-0 min-h-[45vh]"
+      defaultSize={65} 
+      minSize={40}
+      className="min-h-0"
     >
       <div className="h-full w-full flex flex-col">
         <EditorContextMenu onAIAssist={handleAIAssist}>
@@ -163,7 +163,7 @@ export default function MarkdownEditor() {
             onChange={handleContentChange}
             onSelect={handleSelect}
             onScroll={handleScroll}
-            className="flex-1 w-full min-h-0 p-3 border-none rounded-none resize-none focus:outline-none focus:ring-0 focus-visible:ring-0 font-mono text-sm leading-relaxed custom-scrollbar touch-manipulation"
+            className="flex-1 w-full h-full p-3 border-none rounded-none resize-none focus:outline-none focus:ring-0 focus-visible:ring-0 font-mono text-sm leading-relaxed custom-scrollbar touch-manipulation"
             placeholder="Enter your markdown here..."
             style={{ 
               minHeight: 0,
