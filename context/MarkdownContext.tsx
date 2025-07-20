@@ -221,7 +221,216 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const downloadPDF = () => {
-    window.print()
+    // Get the markdown content from the preview
+    const content = document.getElementById("markdown-preview-content")?.innerHTML
+    const katexCSS = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css" integrity="sha384-Xi8rHCmBmhbuyyhbI88391ZKP2dmfnOl4rT9ZfRI7mLTdk1wblIUnrIq35nqwEvC" crossorigin="anonymous">'
+    
+    if (content) {
+      // Create complete HTML document optimized for printing
+      const htmlDocument = `
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${docTitle} - PDF Export</title>
+            ${katexCSS}
+            <style>
+              :root {
+                --font-size: ${fontSize}px;
+                --line-height: ${lineHeight};
+                --font-family: "${fontFamily}";
+              }
+              
+              body {
+                font-family: var(--font-family);
+                font-size: var(--font-size);
+                line-height: var(--line-height);
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 40px 20px;
+                color: #111;
+                background-color: #fff;
+              }
+              
+              .markdown-body {
+                font-size: ${fontSize}px;
+                line-height: ${lineHeight};
+                font-family: ${fontFamily}, sans-serif;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+              }
+              
+              /* Typography */
+              h1, h2, h3, h4, h5, h6 {
+                margin: 1.5em 0 0.5em 0;
+                color: #111;
+                page-break-after: avoid;
+              }
+              
+              h1 { font-size: 2.5em; font-weight: bold; }
+              h2 { font-size: 2em; font-weight: 600; }
+              h3 { font-size: 1.5em; font-weight: 500; }
+              h4 { font-size: 1.25em; font-weight: 500; }
+              h5 { font-size: 1.125em; font-weight: 500; }
+              h6 { font-size: 1em; font-weight: 500; }
+              
+              p {
+                margin: 1em 0;
+                color: #111;
+              }
+              
+              /* Links */
+              a {
+                color: #0066cc;
+                text-decoration: underline;
+              }
+              
+              /* Lists */
+              ul, ol {
+                margin: 1em 0;
+                padding-left: 2em;
+              }
+              
+              li {
+                margin-bottom: 0.5em;
+              }
+              
+              /* Code */
+              code {
+                background: #f5f5f5;
+                color: #333;
+                padding: 2px 4px;
+                border-radius: 3px;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9em;
+              }
+              
+              pre {
+                background: #f5f5f5;
+                color: #333;
+                padding: 1em;
+                border-radius: 5px;
+                white-space: pre-wrap;
+                overflow: visible;
+                margin: 1em 0;
+              }
+              
+              pre code {
+                background: transparent;
+                padding: 0;
+              }
+              
+              /* Tables */
+              table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 1em 0;
+              }
+              
+              th, td {
+                border: 1px solid #ddd;
+                padding: 8px 12px;
+                text-align: left;
+              }
+              
+              th {
+                background-color: #f5f5f5;
+                font-weight: bold;
+              }
+              
+              /* Blockquotes */
+              blockquote {
+                border-left: 4px solid #ccc;
+                padding-left: 1em;
+                margin: 1em 0;
+                color: #666;
+                font-style: italic;
+              }
+              
+              /* Images */
+              img {
+                max-width: 100%;
+                height: auto;
+                margin: 1em 0;
+              }
+              
+              /* Horizontal rules */
+              hr {
+                border: none;
+                border-top: 1px solid #ccc;
+                margin: 2em 0;
+              }
+              
+              /* Math equations */
+              .katex-display {
+                display: flex;
+                justify-content: center;
+                margin: 1em 0;
+                max-width: 100%;
+                overflow: hidden;
+              }
+              
+              .katex {
+                display: inline-block;
+                white-space: normal;
+                max-width: 100%;
+              }
+              
+              /* Print styles */
+              @media print {
+                body {
+                  margin: 0;
+                  padding: 20px;
+                }
+                
+                h1, h2, h3, h4, h5, h6 {
+                  page-break-after: avoid;
+                }
+                
+                pre, blockquote {
+                  page-break-inside: avoid;
+                }
+                
+                img {
+                  page-break-inside: avoid;
+                }
+                
+                table {
+                  page-break-inside: avoid;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="markdown-body">
+              ${content}
+            </div>
+            <script>
+              // Auto-open print dialog when page loads
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `
+      
+      // Create blob and open in new tab
+      const blob = new Blob([htmlDocument], { type: "text/html" })
+      const url = URL.createObjectURL(blob)
+      
+      // Open in new tab
+      const newTab = window.open(url, '_blank')
+      
+      // Clean up the blob URL after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(url)
+      }, 1000)
+    }
   }
 
   const copyToClipboard = () => {
@@ -586,26 +795,46 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const insertMarkdownTable = () => {
+    const textarea = document.querySelector("textarea") as HTMLTextAreaElement
     const markdownTable = generateMarkdownTable()
-    setMarkdown((prevMarkdown) => prevMarkdown + "\n\n" + markdownTable)
+    
+    if (!textarea) {
+      // Fallback: append to end if no textarea found
+      setMarkdown((prevMarkdown) => prevMarkdown + "\n\n" + markdownTable)
+      return
+    }
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const currentValue = textarea.value
+    
+    // Add proper spacing around table
+    const beforeText = currentValue.slice(0, start)
+    const afterText = currentValue.slice(end)
+    const needsSpaceBefore = beforeText.trim() && !beforeText.endsWith('\n\n')
+    const needsSpaceAfter = afterText.trim() && !afterText.startsWith('\n\n')
+    
+    const insertion = (needsSpaceBefore ? '\n\n' : '') + markdownTable + (needsSpaceAfter ? '\n\n' : '')
+    const newContent = beforeText + insertion + afterText
+    const newCursorPosition = start + insertion.length
+
+    // Update React state
+    setMarkdown(newContent)
+    
+    // Update textarea and cursor position
+    setTimeout(() => {
+      textarea.focus()
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition)
+    }, 0)
   }
 
   const replaceLatexDelimiters = (text: string) => {
-    // First replace LaTeX delimiters
-    let processedText = text
+    // Replace LaTeX delimiters only
+    return text
       .replace(/\\\[/g, "$$$$") // Replace \[ with $$
       .replace(/\\\]/g, "$$$$") // Replace \] with $$
       .replace(/\\\(/g, "$$") // Replace \( with $
       .replace(/\\\)/g, "$$") // Replace \) with $
-    
-    // Find all math expressions (both inline and block)
-    const mathRegex = /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g;
-    
-    // Replace pipe symbols within math expressions with HTML entity
-    return processedText.replace(mathRegex, (match) => {
-      // Replace all pipe symbols with their HTML entity within math expressions
-      return match.replace(/\|/g, "\\vert ");
-    });
   }
 
   // Generate content with Gemini AI

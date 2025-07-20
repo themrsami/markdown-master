@@ -333,67 +333,6 @@
   @apply border-gray-600;
 }
 
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  #markdown-preview-content,
-  #markdown-preview-content * {
-    visibility: visible !important;
-  }
-  #markdown-preview-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: auto;
-  }
-  .katex-display,
-  .katex {
-    visibility: visible !important;
-  }
-  .katex-display > .katex {
-    display: block !important;
-    white-space: nowrap !important;
-    overflow: visible !important;
-    text-align: center !important;
-    max-width: 100% !important;
-  }
-  .katex {
-    display: inline-block !important;
-    white-space: normal !important;
-    overflow: visible !important;
-    max-width: 100% !important;
-  }
-  
-  /* Fix for square root rendering */
-  .katex .sqrt {
-    display: inline-flex !important;
-    max-width: fit-content !important;
-  }
-  
-  .katex .sqrt .sqrt-sign {
-    position: relative !important;
-    max-width: fit-content !important;
-  }
-  
-  .katex .sqrt .vlist {
-    max-width: fit-content !important;
-  }
-  
-  .katex .overline .overline-line {
-    min-width: auto !important;
-    max-width: 100% !important;
-    width: auto !important;
-  }
-  
-  /* Ensure proper spacing and sizing */
-  .katex-html {
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
-}
-
 .font-roboto {
   font-family: var(--font-roboto), sans-serif;
 }

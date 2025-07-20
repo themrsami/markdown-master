@@ -84,7 +84,7 @@ export default function MarkdownPreview() {
           onScroll={handleScroll}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
-          <div className="markdown-body max-w-none prose prose-sm sm:prose-base lg:prose-lg">
+          <div className="markdown-body markdown-body-preview max-w-none prose prose-sm sm:prose-base lg:prose-lg">
             <ReactMarkdown
             remarkPlugins={[remarkMath, remarkGfm]}
             rehypePlugins={[rehypeKatex, rehypeRaw]}
