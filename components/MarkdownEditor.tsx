@@ -3,7 +3,9 @@
 import { useMarkdown } from "@/context/MarkdownContext"
 import { Textarea } from "@/components/ui/textarea"
 import { ResizablePanel } from "@/components/ui/resizable"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useEffect, useRef, useState, useCallback } from "react"
+import { Info } from "lucide-react"
 import EditorContextMenu from "./EditorContextMenu"
 
 export default function MarkdownEditor() {
@@ -12,6 +14,7 @@ export default function MarkdownEditor() {
     setMarkdown, 
     replaceLatexDelimiters, 
     aiEnabled,
+    geminiApiKey,
     setSelectedText,
     setSelectionRange
   } = useMarkdown();
@@ -151,7 +154,7 @@ export default function MarkdownEditor() {
 
   return (
     <ResizablePanel 
-      defaultSize={60} 
+      defaultSize={50} 
       minSize={30}
       className="lg:min-h-0 min-h-[45vh]"
     >
@@ -172,6 +175,19 @@ export default function MarkdownEditor() {
             }}
           />
         </EditorContextMenu>
+        
+        {/* AI Tip when not enabled */}
+        {(!aiEnabled || !geminiApiKey) && (
+          <div className="p-3 border-t">
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800 text-xs">
+                <strong>Tip:</strong> Enable AI Assistant in settings to enhance your writing. 
+                Select text and right-click for AI-powered editing assistance!
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
       </div>
     </ResizablePanel>
   );

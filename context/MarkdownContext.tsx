@@ -54,6 +54,13 @@ type MarkdownContextType = {
   selectionRange: { start: number; end: number } | null;
   setSelectionRange: (range: { start: number; end: number } | null) => void;
   generateWithAI: (prompt: string) => Promise<string>;
+  generateCSSWithAI: (prompt: string, elementInfo: string) => Promise<string>;
+  elementSelectorMode: boolean;
+  setElementSelectorMode: (mode: boolean) => void;
+  selectedElement: Element | null;
+  setSelectedElement: (element: Element | null) => void;
+  customCSS: string;
+  setCustomCSS: (css: string) => void;
   getSyntaxHighlighterStyle: () => any;
   insertMarkdown: (format: string) => void;
   downloadPDF: () => void;
@@ -65,6 +72,7 @@ type MarkdownContextType = {
   loadDocument: (doc: SavedDocument) => void;
   deleteDocument: (id: string, e: React.MouseEvent) => void;
   deleteMultipleDocuments: (ids: string[]) => void;
+  renameDocument: (id: string, newTitle: string) => void;
   copyToClipboard: () => void;
   clearMarkdown: () => void;
   addTableRow: () => void;
@@ -171,6 +179,11 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
   const [selectedText, setSelectedText] = useState("")
   const [showAiPrompt, setShowAiPrompt] = useState(false)
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null)
+  
+  // Element selector and CSS customization state
+  const [elementSelectorMode, setElementSelectorMode] = useState(false)
+  const [selectedElement, setSelectedElement] = useState<Element | null>(null)
+  const [customCSS, setCustomCSS] = useState("")
 
   // Handle theme and styling
   useEffect(() => {
@@ -212,7 +225,44 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     if (storedApiKey) {
       setGeminiApiKey(storedApiKey)
     }
+    
+    // Load saved custom CSS
+    const storedCSS = localStorage.getItem('markdown-master-custom-css')
+    if (storedCSS) {
+      setCustomCSS(storedCSS)
+      
+      // Apply saved CSS to document
+      let styleElement = document.getElementById('custom-markdown-styles') as HTMLStyleElement;
+      if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = 'custom-markdown-styles';
+        document.head.appendChild(styleElement);
+      }
+      
+      styleElement.textContent = storedCSS;
+    }
   }, [])
+
+  // Update style element when custom CSS changes
+  useEffect(() => {
+    let styleElement = document.getElementById('custom-markdown-styles') as HTMLStyleElement;
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = 'custom-markdown-styles';
+      document.head.appendChild(styleElement);
+    }
+    
+    styleElement.textContent = customCSS || '';
+  }, [customCSS])
+
+  // Save custom CSS to localStorage when it changes
+  useEffect(() => {
+    if (customCSS) {
+      localStorage.setItem('markdown-master-custom-css', customCSS)
+    } else {
+      localStorage.removeItem('markdown-master-custom-css')
+    }
+  }, [customCSS])
 
   const getSyntaxHighlighterStyle = () => {
     if (syntaxTheme === "tomorrow") return tomorrow;
@@ -224,6 +274,9 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     // Get the markdown content from the preview
     const content = document.getElementById("markdown-preview-content")?.innerHTML
     const katexCSS = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css" integrity="sha384-Xi8rHCmBmhbuyyhbI88391ZKP2dmfnOl4rT9ZfRI7mLTdk1wblIUnrIq35nqwEvC" crossorigin="anonymous">'
+    
+    console.log('PDF Export - Custom CSS:', customCSS); // Debug log
+    console.log('PDF Export - Custom CSS length:', customCSS?.length || 0); // Debug log
     
     if (content) {
       // Create complete HTML document optimized for printing
@@ -401,11 +454,16 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
                   page-break-inside: avoid;
                 }
               }
+              
+              /* Custom User Styles */
+              ${customCSS || '/* No custom styles applied */'}
             </style>
           </head>
           <body>
-            <div class="markdown-body">
-              ${content}
+            <div id="markdown-preview-content">
+              <div class="markdown-body">
+                ${content}
+              </div>
             </div>
             <script>
               // Auto-open print dialog when page loads
@@ -537,9 +595,27 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
   }
 
+  const renameDocument = (id: string, newTitle: string) => {
+    const updatedDocs = savedDocuments.map(doc => 
+      doc.id === id 
+        ? { ...doc, title: newTitle, date: new Date().toISOString() }
+        : doc
+    )
+    setSavedDocuments(updatedDocs)
+    localStorage.setItem('markdown-master-documents', JSON.stringify(updatedDocs))
+    
+    // Update current document title if it's the one being renamed
+    if (currentFileId === id) {
+      setDocTitle(newTitle)
+    }
+  }
+
   const downloadHTML = () => {
     const content = document.getElementById("markdown-preview-content")?.innerHTML
     const katexCSS = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css" integrity="sha384-Xi8rHCmBmhbuyyhbI88391ZKP2dmfnOl4rT9ZfRI7mLTdk1wblIUnrIq35nqwEvC" crossorigin="anonymous">'
+    
+    console.log('HTML Export - Custom CSS:', customCSS); // Debug log
+    console.log('HTML Export - Custom CSS length:', customCSS?.length || 0); // Debug log
     
     if (content) {
       // Get the computed CSS styles for proper rendering
@@ -672,11 +748,16 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
                 --font-family: "${fontFamily}";
               }
               ${markdownStyles}
+              
+              /* Custom User Styles */
+              ${customCSS || '/* No custom styles applied */'}
             </style>
           </head>
           <body class="${theme}">
-            <div class="markdown-body">
-              ${content}
+            <div id="markdown-preview-content">
+              <div class="markdown-body">
+                ${content}
+              </div>
             </div>
           </body>
         </html>
@@ -917,6 +998,104 @@ Generate a response that directly answers their request. Your response should be
     }
   };
 
+  // Generate CSS styles with Gemini AI
+  const generateCSSWithAI = async (prompt: string, elementInfo: string): Promise<string> => {
+    if (!geminiApiKey) {
+      console.error("Gemini API key is not set")
+      return "Error: API key not provided. Please add your Gemini API key in settings."
+    }
+
+    try {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": geminiApiKey
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are a CSS expert helping to style HTML elements. The user has selected a specific element and wants to apply custom CSS styles to it.
+
+IMPORTANT: You are styling ONE SPECIFIC ELEMENT that has already been targeted with a precise CSS selector. Do NOT change or suggest a different selector.
+
+Selected Element Details:
+${elementInfo}
+
+User's Styling Request: "${prompt}"
+
+Your task: Generate ONLY the CSS properties (not selectors or curly braces) that will accomplish the user's request for this specific element. 
+
+Requirements:
+- Generate only CSS properties and values
+- Use !important declarations for specificity
+- One property per line with proper semicolons
+- Focus on the specific element described above
+- Do not include any selectors, comments, or curly braces
+- Make the styles beautiful and professional
+
+Example format:
+color: #333333 !important;
+background-color: #f8f9fa !important;
+padding: 1rem !important;
+border-radius: 0.5rem !important;
+
+Generate CSS properties only:`
+                }
+              ],
+              role: "user"
+            }
+          ],
+          generation_config: {
+            temperature: 0.7,
+            top_p: 0.95,
+            top_k: 40,
+            max_output_tokens: 2048
+          },
+          safety_settings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Parse the response to extract the generated text
+      if (data.candidates && data.candidates.length > 0 && 
+          data.candidates[0].content && 
+          data.candidates[0].content.parts && 
+          data.candidates[0].content.parts.length > 0) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error("Invalid response format from API");
+      }
+    } catch (error) {
+      console.error("Error generating CSS with AI:", error);
+      return `/* Error generating CSS: ${error instanceof Error ? error.message : 'Unknown error'} */`;
+    }
+  };
+
   return (
     <MarkdownContext.Provider value={{
       markdown,
@@ -962,6 +1141,12 @@ Generate a response that directly answers their request. Your response should be
       selectionRange,
       setSelectionRange,
       generateWithAI,
+      elementSelectorMode,
+      setElementSelectorMode,
+      selectedElement,
+      setSelectedElement,
+      customCSS,
+      setCustomCSS,
       getSyntaxHighlighterStyle,
       insertMarkdown,
       downloadPDF,
@@ -973,6 +1158,7 @@ Generate a response that directly answers their request. Your response should be
       loadDocument,
       deleteDocument,
       deleteMultipleDocuments,
+      renameDocument,
       copyToClipboard,
       clearMarkdown,
       addTableRow,
@@ -984,6 +1170,7 @@ Generate a response that directly answers their request. Your response should be
       copyMarkdownTable,
       insertMarkdownTable,
       replaceLatexDelimiters,
+      generateCSSWithAI,
     }}>
       {children}
     </MarkdownContext.Provider>

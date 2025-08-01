@@ -10,7 +10,7 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
-import { ZapIcon, CopyIcon, ScissorsIcon, PenIcon } from "lucide-react"
+import { ZapIcon, CopyIcon, ScissorsIcon, PenIcon, InfoIcon } from "lucide-react"
 
 interface EditorContextMenuProps {
   children: React.ReactNode
@@ -49,7 +49,7 @@ export default function EditorContextMenu({ children, onAIAssist }: EditorContex
           <ContextMenuShortcut>⌘V</ContextMenuShortcut>
         </ContextMenuItem>
         
-        {aiEnabled && (
+        {aiEnabled ? (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem 
@@ -59,6 +59,14 @@ export default function EditorContextMenu({ children, onAIAssist }: EditorContex
             >
               <ZapIcon className="h-4 w-4 mr-2" />
               Enhance with AI Assistant
+            </ContextMenuItem>
+          </>
+        ) : (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem disabled className="text-muted-foreground">
+              <InfoIcon className="h-4 w-4 mr-2" />
+              Enable AI in settings for smart text enhancement
             </ContextMenuItem>
           </>
         )}

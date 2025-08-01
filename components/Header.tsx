@@ -12,9 +12,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import SavedDocumentsList from "@/components/SavedDocumentsList"
 import { Separator } from "@/components/ui/separator"
+import SavedDocumentsList from "@/components/SavedDocumentsList"
 
 export default function Header() {
   const { docTitle, setDocTitle, showSidebar, setShowSidebar, theme } = useMarkdown();
@@ -57,20 +56,20 @@ export default function Header() {
                 <span className="sm:hidden">Docs</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80">
-              <SheetHeader>
-                <SheetTitle className="flex items-center">
-                  <FolderIcon className="mr-2 h-5 w-5" />
-                  Saved Documents
+            <SheetContent side="left" className="w-96 sm:w-[400px]">
+              <SheetHeader className="space-y-2">
+                <SheetTitle className="flex items-center text-lg">
+                  <FolderIcon className="mr-2 h-5 w-5 text-primary" />
+                  Document Library
                 </SheetTitle>
-                <SheetDescription>
-                  Access your saved markdown documents
+                <SheetDescription className="text-sm">
+                  Manage your saved markdown documents with professional tools
                 </SheetDescription>
               </SheetHeader>
               <Separator className="my-4" />
-              <ScrollArea className="h-[75vh] pr-4">
+              <div className="h-[calc(100vh-120px)] overflow-hidden">
                 <SavedDocumentsList />
-              </ScrollArea>
+              </div>
             </SheetContent>
           </Sheet>
         </div>

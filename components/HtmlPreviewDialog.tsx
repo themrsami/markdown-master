@@ -32,7 +32,7 @@ interface HtmlPreviewDialogProps {
 
 export default function HtmlPreviewDialog({ open, onOpenChange }: HtmlPreviewDialogProps) {
   const { toast } = useToast();
-  const { markdown, theme, fontSize, lineHeight, fontFamily } = useMarkdown()
+  const { markdown, theme, fontSize, lineHeight, fontFamily, customCSS } = useMarkdown()
   const [htmlContent, setHtmlContent] = useState("")
   const [cssContent, setCssContent] = useState("")
   const [combinedContent, setCombinedContent] = useState("")
@@ -43,7 +43,7 @@ export default function HtmlPreviewDialog({ open, onOpenChange }: HtmlPreviewDia
     if (open) {
       generateHtmlContent()
     }
-  }, [open, markdown, theme])
+  }, [open, markdown, theme, customCSS])
 
   // Update preview when HTML or CSS is edited
   useEffect(() => {
@@ -72,7 +72,7 @@ ${htmlContent}
   const generateHtmlContent = async () => {
     // Get the rendered HTML content
     const content = document.getElementById("markdown-preview-content")?.innerHTML || ""
-    setHtmlContent(`<div class="markdown-body">\n  ${content}\n</div>`)
+    setHtmlContent(`<div id="markdown-preview-content">\n  <div class="markdown-body">\n    ${content}\n  </div>\n</div>`)
 
     // Generate CSS content
     const markdownStyles = `
@@ -203,7 +203,11 @@ th {
 
 .dark pre {
   background-color: #2d2d2d;
-}`
+}
+
+/* Custom User Styles */
+${customCSS || '/* No custom styles applied */'}
+`
 
     setCssContent(markdownStyles)
   }
