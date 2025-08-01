@@ -7,6 +7,7 @@ export type SavedDocument = {
   id: string;
   title: string;
   content: string;
+  customCSS?: string;
   date: string;
 };
 
@@ -69,6 +70,7 @@ type MarkdownContextType = {
   saveDocument: () => void;
   saveAsDocument: (title: string) => void;
   quickSaveDocument: () => void;
+  newDocument: () => void;
   loadDocument: (doc: SavedDocument) => void;
   deleteDocument: (id: string, e: React.MouseEvent) => void;
   deleteMultipleDocuments: (ids: string[]) => void;
@@ -205,13 +207,13 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (currentFileId) {
       const currentDoc = savedDocuments.find(doc => doc.id === currentFileId)
-      if (currentDoc && currentDoc.content !== markdown) {
+      if (currentDoc && (currentDoc.content !== markdown || (currentDoc.customCSS || '') !== customCSS)) {
         setHasUnsavedChanges(true)
       }
-    } else if (markdown.trim() !== initialMarkdown.trim()) {
+    } else if (markdown.trim() !== initialMarkdown.trim() || customCSS.trim() !== '') {
       setHasUnsavedChanges(true)
     }
-  }, [markdown, currentFileId, savedDocuments])
+  }, [markdown, customCSS, currentFileId, savedDocuments])
 
   // Load saved documents from localStorage
   useEffect(() => {
@@ -226,9 +228,11 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
       setGeminiApiKey(storedApiKey)
     }
     
-    // Load saved custom CSS
+    // Load saved custom CSS only for backward compatibility
+    // New documents will have CSS stored per-document
     const storedCSS = localStorage.getItem('markdown-master-custom-css')
-    if (storedCSS) {
+    if (storedCSS && !savedDocuments.length) {
+      // Only set global CSS if no documents exist (first time user)
       setCustomCSS(storedCSS)
       
       // Apply saved CSS to document
@@ -255,14 +259,16 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     styleElement.textContent = customCSS || '';
   }, [customCSS])
 
-  // Save custom CSS to localStorage when it changes
+  // Save custom CSS to localStorage for backward compatibility only
+  // Primary CSS storage is now per-document
   useEffect(() => {
-    if (customCSS) {
+    // Only save to global localStorage if no current document (for new users)
+    if (customCSS && !currentFileId) {
       localStorage.setItem('markdown-master-custom-css', customCSS)
-    } else {
+    } else if (!customCSS) {
       localStorage.removeItem('markdown-master-custom-css')
     }
-  }, [customCSS])
+  }, [customCSS, currentFileId])
 
   const getSyntaxHighlighterStyle = () => {
     if (syntaxTheme === "tomorrow") return tomorrow;
@@ -516,6 +522,7 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
       id,
       title: docTitle || 'Untitled Document',
       content: markdown,
+      customCSS: customCSS || '',
       date: new Date().toISOString()
     }
 
@@ -531,6 +538,7 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
       id,
       title: title || 'Untitled Document',
       content: markdown,
+      customCSS: customCSS || '',
       date: new Date().toISOString()
     }
 
@@ -549,7 +557,7 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
       // Update existing document
       const updatedDocs = savedDocuments.map(doc => 
         doc.id === currentFileId 
-          ? { ...doc, content: markdown, date: new Date().toISOString() }
+          ? { ...doc, content: markdown, customCSS: customCSS || '', date: new Date().toISOString() }
           : doc
       )
       setSavedDocuments(updatedDocs)
@@ -562,6 +570,7 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
         id,
         title: docTitle || 'Untitled Document',
         content: markdown,
+        customCSS: customCSS || '',
         date: new Date().toISOString()
       }
 
@@ -578,6 +587,16 @@ export const MarkdownProvider = ({ children }: { children: ReactNode }) => {
     setMarkdown(doc.content)
     setDocTitle(doc.title)
     setCurrentFileId(doc.id)
+    setCustomCSS(doc.customCSS || '') // Load document-specific CSS
+    setHasUnsavedChanges(false)
+    setShowSidebar(false)
+  }
+
+  const newDocument = () => {
+    setMarkdown('')
+    setDocTitle('')
+    setCurrentFileId('')
+    setCustomCSS('') // Clear CSS for new document
     setHasUnsavedChanges(false)
     setShowSidebar(false)
   }
@@ -1155,6 +1174,7 @@ Generate CSS properties only:`
       saveDocument,
       saveAsDocument,
       quickSaveDocument,
+      newDocument,
       loadDocument,
       deleteDocument,
       deleteMultipleDocuments,

@@ -13,7 +13,9 @@ import {
   Trash2,
   Sparkles,
   Loader2,
-  Info
+  Info,
+  CheckSquare,
+  Square
 } from "lucide-react"
 import {
   Dialog,
@@ -53,37 +55,92 @@ export default function CSSElementInspector() {
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGeneratingCSS, setIsGeneratingCSS] = useState(false);
+  
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  // Helper function to generate highly specific CSS selector
+  const generateExactSelector = (element: Element): string => {
+    const tagName = element.tagName.toLowerCase();
+    const id = element.id;
+    
+    // Generate highly specific CSS selector
+    let selector = `#markdown-preview-content .markdown-body`;
+    
+    if (id) {
+      // If element has ID, use it (most specific)
+      selector += ` #${id}`;
+    } else {
+      // Build a path-based selector for maximum specificity
+      const pathElements = [];
+      let current = element;
+      const markdownBody = document.querySelector('#markdown-preview-content .markdown-body');
+      
+      // Build path from element to markdown-body container
+      while (current && current !== markdownBody && current.parentElement) {
+        const tag = current.tagName.toLowerCase();
+        const parent = current.parentElement;
+        
+        // Find position among siblings of same tag
+        const siblings = Array.from(parent.children).filter(el => el.tagName === current.tagName);
+        const index = siblings.indexOf(current) + 1;
+        
+        // Include classes if available (excluding css-inspector classes)
+        const classes = Array.from(current.classList).filter(c => 
+          c.trim() && !c.includes('css-inspector')
+        );
+        
+        let elementSelector = tag;
+        if (classes.length > 0) {
+          elementSelector += `.${classes.join('.')}`;
+        }
+        
+        // Always add nth-of-type for specificity
+        if (siblings.length > 1 || tag === 'p' || tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6' || tag === 'li' || tag === 'strong' || tag === 'em' || tag === 'span') {
+          elementSelector += `:nth-of-type(${index})`;
+        }
+        
+        pathElements.unshift(elementSelector);
+        current = current.parentElement;
+        
+        // Stop at markdown-body to avoid going too deep
+        if (current === markdownBody) break;
+      }
+      
+      // Combine all path elements
+      if (pathElements.length > 0) {
+        selector += ` ${pathElements.join(' > ')}`;
+      } else {
+        // Fallback: use tag with nth-of-type
+        const parent = element.parentElement;
+        if (parent) {
+          const siblings = Array.from(parent.children).filter(el => el.tagName === element.tagName);
+          const index = siblings.indexOf(element) + 1;
+          selector += ` ${tagName}:nth-of-type(${index})`;
+        } else {
+          selector += ` ${tagName}`;
+        }
+      }
+    }
+    
+    return selector;
+  };
+
+  // Helper function to generate combined selector for multiple elements
+  const generateMultiElementSelector = (elements: Element[]): string => {
+    if (elements.length === 0) return '';
+    if (elements.length === 1) return generateExactSelector(elements[0]);
+    
+    // Generate individual selectors and combine them
+    const selectors = elements.map(el => generateExactSelector(el));
+    return selectors.join(',\n');
+  };
 
   // Update local CSS when selectedElement changes
   useEffect(() => {
     if (selectedElement) {
-      const tagName = selectedElement.tagName.toLowerCase();
-      const className = selectedElement.className;
-      const id = selectedElement.id;
-      
-      // Generate more specific CSS selector for higher specificity
-      let selector = `#markdown-preview-content .markdown-body ${tagName}`;
-      
-      if (id) {
-        selector = `#markdown-preview-content .markdown-body #${id}`;
-      } else if (className && typeof className === 'string' && className.trim()) {
-        const classes = className.split(' ').filter(c => c.trim() && !c.includes('css-inspector'));
-        if (classes.length > 0) {
-          selector = `#markdown-preview-content .markdown-body ${tagName}.${classes.join('.')}`;
-        }
-      }
-      
-      // Add nth-child if needed for more specificity
-      const parent = selectedElement.parentElement;
-      if (parent) {
-        const siblings = Array.from(parent.children).filter(el => el.tagName === selectedElement.tagName);
-        if (siblings.length > 1) {
-          const index = siblings.indexOf(selectedElement) + 1;
-          selector += `:nth-of-type(${index})`;
-        }
-      }
+      // Single element mode - auto-open dialog for immediate styling
+      const selector = generateExactSelector(selectedElement);
       
       // Generate element path for display
       const path = getElementPath(selectedElement);
@@ -105,6 +162,10 @@ export default function CSSElementInspector() {
       
       setLocalCSS(defaultCSS);
       setIsDialogOpen(true);
+    } else {
+      setLocalCSS("");
+      setElementPath("");
+      setIsDialogOpen(false);
     }
   }, [selectedElement, customCSS]);
 
@@ -298,6 +359,13 @@ export default function CSSElementInspector() {
       document.querySelectorAll('.css-inspector-hover').forEach(el => {
         el.classList.remove('css-inspector-hover');
       });
+      // Clear selection highlights
+      document.querySelectorAll('.css-inspector-selected').forEach(el => {
+        el.classList.remove('css-inspector-selected');
+      });
+      document.querySelectorAll('.css-inspector-multi-selected').forEach(el => {
+        el.classList.remove('css-inspector-multi-selected');
+      });
       setSelectedElement(null);
       
       toast({
@@ -416,23 +484,8 @@ export default function CSSElementInspector() {
         styleElement.remove();
       }
     } else {
-      // Generate the exact selector for the selected element
-      const tagName = selectedElement.tagName.toLowerCase();
-      let exactSelector = `#markdown-preview-content .markdown-body ${tagName}`;
-      
-      if (selectedElement.id) {
-        exactSelector = `#markdown-preview-content .markdown-body #${selectedElement.id}`;
-      } else if (Array.from(selectedElement.classList).filter(cls => !cls.startsWith('css-inspector')).length > 0) {
-        const cleanClasses = Array.from(selectedElement.classList).filter(cls => !cls.startsWith('css-inspector'));
-        exactSelector = `#markdown-preview-content .markdown-body ${tagName}.${cleanClasses.join('.')}`;
-      } else {
-        const parent = selectedElement.parentElement;
-        if (parent) {
-          const siblings = Array.from(parent.children).filter(el => el.tagName === selectedElement.tagName);
-          const index = siblings.indexOf(selectedElement) + 1;
-          exactSelector += `:nth-of-type(${index})`;
-        }
-      }
+      // Use the same helper function to generate exact selector
+      const exactSelector = generateExactSelector(selectedElement);
       
       // Remove only the CSS block for this specific element
       if (customCSS) {
@@ -451,7 +504,7 @@ export default function CSSElementInspector() {
         
         toast({
           title: "Element Styles Cleared",
-          description: `Removed custom styles for the selected ${tagName} element.`,
+          description: `Removed custom styles for the selected ${selectedElement.tagName.toLowerCase()} element.`,
         });
       }
     }
@@ -488,22 +541,8 @@ export default function CSSElementInspector() {
       ).join(', ');
       const textContent = selectedElement.textContent?.slice(0, 100) || '';
       
-      // Generate the exact same selector that will be used
-      let exactSelector = `#markdown-preview-content .markdown-body ${tagName}`;
-      
-      if (selectedElement.id) {
-        exactSelector = `#markdown-preview-content .markdown-body #${selectedElement.id}`;
-      } else if (Array.from(selectedElement.classList).filter(cls => !cls.startsWith('css-inspector')).length > 0) {
-        const cleanClasses = Array.from(selectedElement.classList).filter(cls => !cls.startsWith('css-inspector'));
-        exactSelector = `#markdown-preview-content .markdown-body ${tagName}.${cleanClasses.join('.')}`;
-      } else {
-        const parent = selectedElement.parentElement;
-        if (parent) {
-          const siblings = Array.from(parent.children).filter(el => el.tagName === selectedElement.tagName);
-          const index = siblings.indexOf(selectedElement) + 1;
-          exactSelector += `:nth-of-type(${index})`;
-        }
-      }
+      // Use the same helper function to generate exact selector
+      const exactSelector = generateExactSelector(selectedElement);
 
       const elementInfo = `Target Element: ${tagName}${id}
 Exact CSS Selector: ${exactSelector}
@@ -593,24 +632,29 @@ ${exactSelector} {
               {/* Element Info */}
               <div className="space-y-2">
                 <h4 className="font-medium">Selected Element:</h4>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary">
-                    {selectedElement.tagName.toLowerCase()}
-                  </Badge>
-                  {selectedElement.id && (
-                    <Badge variant="outline">
-                      #{selectedElement.id}
-                    </Badge>
-                  )}
-                  {selectedElement.className && typeof selectedElement.className === 'string' && (
-                    <Badge variant="outline">
-                      .{selectedElement.className.split(' ').filter(c => c.trim()).join('.')}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground font-mono">
-                  {elementPath}
-                </p>
+                
+                {selectedElement && (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">
+                        {selectedElement.tagName.toLowerCase()}
+                      </Badge>
+                      {selectedElement.id && (
+                        <Badge variant="outline">
+                          #{selectedElement.id}
+                        </Badge>
+                      )}
+                      {selectedElement.className && typeof selectedElement.className === 'string' && (
+                        <Badge variant="outline">
+                          .{selectedElement.className.split(' ').filter(c => c.trim()).join('.')}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground font-mono">
+                      {elementPath}
+                    </p>
+                  </>
+                )}
               </div>
 
               <Separator />

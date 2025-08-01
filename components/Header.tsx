@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useMarkdown } from "@/context/MarkdownContext"
-import { FolderIcon, FileTextIcon, MenuIcon } from "lucide-react"
+import { FolderIcon, FileTextIcon, MenuIcon, PlusIcon } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import SavedDocumentsList from "@/components/SavedDocumentsList"
 
 export default function Header() {
-  const { docTitle, setDocTitle, showSidebar, setShowSidebar, theme } = useMarkdown();
+  const { docTitle, setDocTitle, showSidebar, setShowSidebar, theme, newDocument } = useMarkdown();
 
   return (
     <div className="mb-1 relative">
@@ -44,6 +44,16 @@ export default function Header() {
         </div>
         
         <div className="flex items-center gap-2 flex-shrink-0">
+          <Button 
+            onClick={newDocument}
+            variant="outline" 
+            size="sm" 
+            className="gap-1 sm:gap-2 shadow-sm hover:shadow-md transition-all text-xs sm:text-sm"
+          >
+            <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">New Document</span>
+            <span className="sm:hidden">New</span>
+          </Button>
           <Sheet open={showSidebar} onOpenChange={setShowSidebar}>
             <SheetTrigger asChild>
               <Button 

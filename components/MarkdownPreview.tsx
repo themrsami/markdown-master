@@ -8,7 +8,7 @@ import rehypeKatex from "rehype-katex"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef, useCallback, useState } from "react"
 import CSSElementInspector from "./CSSElementInspector"
 
 export default function MarkdownPreview() {
@@ -33,6 +33,9 @@ export default function MarkdownPreview() {
       document.querySelectorAll('.css-inspector-hover').forEach(el => {
         el.classList.remove('css-inspector-hover');
       });
+      document.querySelectorAll('.css-inspector-multi-selected').forEach(el => {
+        el.classList.remove('css-inspector-multi-selected');
+      });
     }
   }, [elementSelectorMode]);
 
@@ -44,6 +47,9 @@ export default function MarkdownPreview() {
       });
       document.querySelectorAll('.css-inspector-hover').forEach(el => {
         el.classList.remove('css-inspector-hover');
+      });
+      document.querySelectorAll('.css-inspector-multi-selected').forEach(el => {
+        el.classList.remove('css-inspector-multi-selected');
       });
     };
   }, []);
@@ -65,16 +71,20 @@ export default function MarkdownPreview() {
         selectedEl = target.parentElement;
       }
       
-      // Add visual feedback
+      // Clear all previous selections
       document.querySelectorAll('.css-inspector-selected').forEach(el => {
         el.classList.remove('css-inspector-selected');
       });
+      document.querySelectorAll('.css-inspector-multi-selected').forEach(el => {
+        el.classList.remove('css-inspector-multi-selected');
+      });
       
+      // Set new selection
       selectedEl.classList.add('css-inspector-selected');
       setSelectedElement(selectedEl);
     }
   }, [elementSelectorMode, setSelectedElement]);
-  
+
   // Handle element hover in selector mode
   const handleElementHover = useCallback((e: React.MouseEvent) => {
     if (elementSelectorMode) {
